@@ -1,0 +1,13 @@
+Package: RcppDE
+Version: 0.1.0
+Title: Global optimization by differential evolution in C++
+Author: Dirk Eddelbuettel extending DEoptim (by David Ardia, Katharine Mullen,
+  Brian Peterson, Joshua Ulrich) which itself is based on DE-Engine (by Rainer Storn)
+Maintainer: Dirk Eddelbuettel <edd@debian.org>
+Description: This package provides an efficient C++ based implementation of the
+  DEoptim function which performs global optimization by differential evolution. 
+  It aims to show that "easier, shorter, faster: pick any three" is achievable
+  when moving code from plain old C to modern C++.
+License: GPL (>= 2)
+Depends: Rcpp
+LinkingTo: Rcpp

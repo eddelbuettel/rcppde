@@ -1,0 +1,24 @@
+2010-10-15  Dirk Eddelbuettel  <edd@debian.org>
+
+	* data/xrrData.rda, data.SMI.rda: Removed in this package as unused
+	* man/xrrData.Rd, man/SMI.Rd: Removed in this package as unused
+
+	* src/de4_0.c (devol): removed unused variable 'x'
+
+	* cleanup: Added cleanup script
+
+2010-10-14  Dirk Eddelbuettel  <edd@debian.org>
+
+	* NAMESPACE, DESCRIPTION: New name is RcppDE to differentiate from DEoptim
+	* Top-level files CHANGES, COPYING, NEWS, README, THANKS unchanged
+
+	* inst/CITATION: Also removed
+
+	* inst/doc/*: Removed DEoptim papers for this variant
+
+	* demo/DEoptim.R: Removed unused parameters 'refresh' + 'digits'
+
+	* R/zzz.R: Switch to 'packageStartupMessage()' which can suppressed
+
+	* Initial version based on SVN revision 27 of DEoptim
+
