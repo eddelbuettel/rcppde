@@ -374,46 +374,50 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		} while (!done);   // do .. while 
 	    } // while (step > 1) 
 	    /* now the best NP are in first NP places in gta_pop, use them */
-	    for (i = 0; i < i_NP; i++) {
-		for (j = 0; j < i_D; j++) 
-		    ta_newP.at(i,j) = ta_popP.at(i,j);
-		ta_newC[i] = ta_popC[i];
-	    }
-	} /*i_bs_flag*/
+	    // for (i = 0; i < i_NP; i++) {
+	    // 	for (j = 0; j < i_D; j++) 
+	    // 	    ta_newP.at(i,j) = ta_popP.at(i,j);
+	    // 	ta_newC[i] = ta_popC[i];
+	    // }
+	    ta_newP = ta_popP;
+	    ta_newC = ta_popC;
+	} // i_bs_flag
 
-	/* have selected NP mutants move on to next generation */
-	for (i = 0; i < i_NP; i++) {
-	    for (j = 0; j < i_D; j++) 
-		ta_oldP.at(i,j) = ta_newP.at(i,j);
-	    ta_oldC[i] = ta_newC[i];
-	}
-	/* check if the best stayed the same, if necessary */
-	if(i_check_winner)  {
+	// have selected NP mutants move on to next generation 
+	// for (i = 0; i < i_NP; i++) {
+	//     for (j = 0; j < i_D; j++) 
+	// 	ta_oldP.at(i,j) = ta_newP.at(i,j);
+	//     ta_oldC[i] = ta_newC[i];
+	// }
+	ta_oldP = ta_newP;
+	ta_oldC = ta_newC;
+
+	if (i_check_winner)  {		// check if the best stayed the same, if necessary 
 	    same = 1;
 	    for (j = 0; j < i_D; j++)
 		if (t_bestitP[j] != t_bestP[j]) {
 		    same = 0;
 		}
-	    if(same && i_iter > 1)  {
+	    if (same && i_iter > 1)  {
 		i_xav++;
 		tmp_best = evaluate(l_nfeval, t_bestP, par, fcall, rho);			// if re-evaluation of winner 
-
-		/* possibly letting the winner be the average of all past generations */
-		if(i_av_winner)
+		
+		if (i_av_winner)			//  possibly letting the winner be the average of all past generations 
 		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
 		else
 		    t_bestC = tmp_best;
-	    }
-	    else {
+	    } else {
 		i_xav = 1;
 	    }
 	}
-	for (j = 0; j < i_D; j++) 
-	    t_bestitP[j] = t_bestP[j];
+	// for (j = 0; j < i_D; j++) 
+	//     t_bestitP[j] = t_bestP[j];
+	// t_bestitC = t_bestC;
+	t_bestitP = t_bestP;
 	t_bestitC = t_bestC;
 
-	if( i_trace > 0 ) {
-	    if( (i_iter % i_trace) == 0 ) {
+	if ( i_trace > 0 ) {
+	    if ( (i_iter % i_trace) == 0 ) {
 		Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, t_bestC);
 		for (j = 0; j < i_D; j++)
 		    Rprintf("%12.6f", t_bestP[j]);
