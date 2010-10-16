@@ -194,7 +194,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	d_bestvalit[i_iter] = t_bestC;		// store the best value 
 	
 	//for (j = 0; j < i_D; j++) t_bestitP[j] = t_bestP[j];
-	t_bestitP[j] = t_bestP;
+	t_bestitP = t_bestP;
 	t_bestitC = t_bestC;
       
 	i_iter++;
