@@ -330,43 +330,49 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 	} // End mutation loop through pop., ie the "for (i = 0; i < i_NP; i++)"
 
-	if (i_bs_flag) {
-	    /* examine old and new pop. and take the best NP members into next generation */
-	    for (i = 0; i < i_NP; i++) {
-		for (j = 0; j < i_D; j++) 
-		    ta_popP.at(i,j) = ta_oldP.at(i,j);
-		ta_popC[i] = ta_oldC[i];
-	    }
-	    for (i = 0; i < i_NP; i++) {
-		for (j = 0; j < i_D; j++) 
-		    ta_popP.at(i_NP+i,j) = ta_newP.at(i,j);
-		ta_popC[i_NP+i] = ta_newC[i];
-	    }
+	if (i_bs_flag) {	// examine old and new pop. and take the best NP members into next generation 
+	    
+	    // for (i = 0; i < i_NP; i++) {
+	    // 	for (j = 0; j < i_D; j++) 
+	    // 	    ta_popP.at(i,j) = ta_oldP.at(i,j);
+	    // 	ta_popC[i] = ta_oldC[i];
+	    // }
+	    ta_popP.rows(0, i_NP-1) = ta_oldP;
+	    ta_popC.rows(0, i_NP-1) = ta_oldC;
+
+	    // for (i = 0; i < i_NP; i++) {
+	    // 	for (j = 0; j < i_D; j++) 
+	    // 	    ta_popP.at(i_NP+i,j) = ta_newP.at(i,j);
+	    // 	ta_popC[i_NP+i] = ta_newC[i];
+	    // }
+	    ta_popP.rows(i_NP, 2*i_NP-1) = ta_newP;
+	    ta_popC.rows(i_NP, 2*i_NP-1) = ta_newC;
+
 	    i_len = 2 * i_NP;
-	    step = i_len;  /* array length */
+	    step = i_len;  		// array length 
 	    while (step > 1) {
-		step /= 2;   /* halve the step size */
+		step /= 2;   		// halve the step size 
 		do {
 		    done = 1;
 		    bound  = i_len - step;
 		    for (j = 0; j < bound; j++) {
 			i = j + step + 1;
 			if (ta_popC[j] > ta_popC[i-1]) {
-			    for (k = 0; k < i_D; k++) 
-				tempP[k] = ta_popP.at(i-1, k);
+			    //for (k = 0; k < i_D; k++) tempP[k] = ta_popP.at(i-1, k);
+			    tempP = ta_popP.row(i-1);
 			    tempC = ta_popC[i-1];
-			    for (k = 0; k < i_D; k++) 
-				ta_popP.at(i-1,k) = ta_popP.at(j,k);
+			    //for (k = 0; k < i_D; k++) ta_popP.at(i-1,k) = ta_popP.at(j,k);
+			    ta_popP.row(i-1) = ta_popP.row(j);
 			    ta_popC[i-1] = ta_popC[j];
-			    for (k = 0; k < i_D; k++) 
-				ta_popP.at(j,k) = tempP[k];
+			    //for (k = 0; k < i_D; k++) ta_popP.at(j,k) = tempP[k];
+			    ta_popP.row(j) = tempP;
 			    ta_popC[j] = tempC;
 			    done = 0; 
-			    /* if a swap has been made we are not finished yet */
-			}  /* if */
-		    }  /* for */
-		} while (!done);   /* while */
-	    } /*while (step > 1) */
+			    // if a swap has been made we are not finished yet 
+			}  // if 
+		    }  // for 
+		} while (!done);   // do .. while 
+	    } // while (step > 1) 
 	    /* now the best NP are in first NP places in gta_pop, use them */
 	    for (i = 0; i < i_NP; i++) {
 		for (j = 0; j < i_D; j++) 
