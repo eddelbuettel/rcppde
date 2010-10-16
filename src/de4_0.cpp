@@ -154,7 +154,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    for (j = 0; j < i_D; j++) {
 		ta_popP.at(i,j) = fa_minbound[j] + unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 	    }
-	} else { /* or user-specified initial member */
+	} else { 				// or user-specified initial member 
 	    ta_popP.row(i) = initialpop.row(i);
 	} 
 	ta_popC[i] = evaluate(l_nfeval, ta_popP.row(i), par, fcall, rho);
@@ -180,7 +180,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		    popcnt++;
 		}
 	    }
-	} /* end store pop */
+	} // end store pop 
       
 	d_bestmemit.row(i_iter) = t_bestP;	// store the best member
 	d_bestvalit[i_iter] = t_bestC;		// store the best value 
@@ -200,8 +200,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    t_tmpP = ta_oldP.row(i);		// t_tmpP is the vector to mutate and eventually select
 	    t_tmpC = ta_oldC[i];
 
-	    permute(ia_urn2, urn_depth, i_NP, i, ia_urntmp.begin()); /* Pick 4 random and distinct */
-	    i_r1 = ia_urn2[1];  /* population members */
+	    permute(ia_urn2, urn_depth, i_NP, i, ia_urntmp.begin()); // Pick 4 random and distinct 
+	    i_r1 = ia_urn2[1];  // population members 
 	    i_r2 = ia_urn2[2];
 	    i_r3 = ia_urn2[3];
 	    i_r4 = ia_urn2[4];
@@ -212,7 +212,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
-		    /* add fluctuation to random target */
+		    // add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
 		    k++;
@@ -223,7 +223,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
-		    /* add fluctuation to random target */
+		    // add fluctuation to random target 
 		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
 		    k++;
@@ -253,7 +253,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 	    } else if (i_strategy == 5) {	// ---DE/rand/1/bin with per-generation-dither---------------------------------
 	  
-		j = (int)(unif_rand() * i_D); /* random parameter */
+		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
 		    // add fluctuation to random target 
