@@ -33,9 +33,7 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            int i_strategy, int i_D, int i_NP, int i_itermax,
            double *initialpopv, int i_storepopfreq, int i_storepopfrom,
            int i_specinitialpop, int i_check_winner, int i_av_winner,
-           /*double **gta_popP,*/ arma::mat &ta_popP,
-	   /*double **gta_oldP,*/ arma::mat &ta_oldP,
-	   /*double **gta_newP,*/ arma::mat &ta_newP,
+           arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP,
 	   double *gt_bestP,
            double *gta_popC, double *gta_oldC, double *gta_newC, 
 	   double & t_bestC,	// now passed by reference in C++
@@ -76,20 +74,20 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
     arma::mat ta_newP(i_NP,   i_D);
     arma::colvec t_bestP(i_D); 						// double *t_bestP = (double *)R_alloc(1,sizeof(double) * i_D);
 
-    arma::colvec ta_popC(i_NP*2);  //double *gta_popC = (double *)R_alloc(i_NP*2,sizeof(double));    	// Data structures for obj. fun. values associated with par. vectors 
-    arma::colvec ta_oldC(i_NP);    //double *gta_oldC = (double *)R_alloc(i_NP,sizeof(double));
-    arma::colvec ta_newC(i_NP);    //double *gta_newC = (double *)R_alloc(i_NP,sizeof(double));
-    double t_bestC; 		   //  = (double *)R_alloc(1,sizeof(double));       
+    arma::colvec ta_popC(i_NP*2);  				    	// Data structures for obj. fun. values associated with par. vectors 
+    arma::colvec ta_oldC(i_NP);
+    arma::colvec ta_newC(i_NP);
+    double t_bestC; 
 
-    Rcpp::NumericVector t_bestitP(i_D);			// double *t_bestitP = (double *)R_alloc(1,sizeof(double) * i_D);
-    Rcpp::NumericVector t_tmpP(i_D); 			// double *t_tmpP = (double *)R_alloc(1,sizeof(double) * i_D);
-    Rcpp::NumericVector tempP(i_D);			// double *tempP = (double *)R_alloc(1,sizeof(double) * i_D);
+    arma::colvec t_bestitP(i_D);
+    arma::colvec t_tmpP(i_D); 
+    arma::colvec tempP(i_D);
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
-    Rcpp::NumericVector d_pop(i_NP*i_D);                  // double *d_pop = (double *)R_alloc(i_NP*i_D,sizeof(double));
-    Rcpp::NumericVector d_storepop(i_NP*i_D*i_nstorepop); // double *d_storepop = (double *)R_alloc(i_NP,sizeof(double) * i_D * i_nstorepop);
-    Rcpp::NumericVector d_bestmemit(i_itermax*i_D);       // double *d_bestmemit = (double *)R_alloc(i_itermax*i_D,sizeof(double));
-    Rcpp::NumericVector d_bestvalit(i_itermax); 	 	// double *d_bestvalit = (double *)R_alloc(i_itermax,sizeof(double));
+    Rcpp::NumericVector d_pop(i_NP*i_D); 
+    Rcpp::NumericVector d_storepop(i_NP*i_D*i_nstorepop); 
+    Rcpp::NumericVector d_bestmemit(i_itermax*i_D);       
+    Rcpp::NumericVector d_bestvalit(i_itermax); 	 
     int i_iter = 0;
 
     /*---optimization--------------------------------------*/
@@ -99,7 +97,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 	  i_specinitialpop, i_check_winner, i_av_winner,
 	  ta_popP, ta_oldP, ta_newP, t_bestP.memptr(),
 	  ta_popC.memptr(), ta_oldC.memptr(), ta_newC.memptr(), t_bestC,
-	  t_bestitP.begin(), t_tmpP.begin(), tempP.begin(),
+	  t_bestitP.memptr(), t_tmpP.memptr(), tempP.memptr(),
 	  d_pop.begin(), d_storepop.begin(), d_bestmemit.begin(), d_bestvalit.begin(),
 	  &i_iter, i_pPct, l_nfeval);
     /*---end optimization----------------------------------*/
