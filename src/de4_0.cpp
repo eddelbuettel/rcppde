@@ -18,7 +18,7 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::rowvec & t_bestP, 
 	   arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, double       & t_bestC,	
            arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
-           arma::rowvec & d_pop, arma::rowvec & d_storepop, arma::rowvec & d_bestmemit, arma::rowvec & d_bestvalit,
+           arma::rowvec & d_pop, arma::rowvec & d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
@@ -71,7 +71,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     arma::rowvec d_pop(i_NP*i_D); 
     arma::rowvec d_storepop(i_NP*i_D*i_nstorepop); 
-    arma::rowvec d_bestmemit(i_itermax*i_D);       
+    arma::mat d_bestmemit(i_itermax, i_D);       
     arma::rowvec d_bestvalit(i_itermax); 	 
     int i_iter = 0;
 
@@ -103,7 +103,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	   arma::rowvec & t_bestP, arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, 
 	   double & t_bestC,
            arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
-           arma::rowvec &d_pop, arma::rowvec &d_storepop, arma::rowvec & d_bestmemit, arma::rowvec & d_bestvalit,
+           arma::rowvec &d_pop, arma::rowvec &d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
     const int urn_depth = 5;   			// 4 + one index to avoid 
@@ -175,9 +175,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     bestacnt = 0;
     i_xav = 1;
   
-    while ((i_iter < i_itermax) && (t_bestC > VTR)) {    // loop 
-	/* store intermediate populations */
-	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {
+    while ((i_iter < i_itermax) && (t_bestC > VTR)) {    // main loop ====================================
+	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {  	// store intermediate populations -- FIXME could be list (or arma::field) of matrices
 	    for (i = 0; i < i_NP; i++) {
 		for (j = 0; j < i_D; j++) {
 		    d_storepop[popcnt] = ta_oldP.at(i,j);
@@ -186,38 +185,30 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 	} /* end store pop */
       
-	/* store the best member */
-	for(j = 0; j < i_D; j++) {
-	    d_bestmemit[bestacnt] = t_bestP[j];
-	    bestacnt++;
-	}
-	/* store the best value */
-	d_bestvalit[i_iter] = t_bestC;
+	//for(j = 0; j < i_D; j++) {			// store the best member -- could also be a matrix of itermax * i_D
+	//    d_bestmemit[bestacnt] = t_bestP[j];
+	//    bestacnt++;
+	//}
+	d_bestmemit.row(i_iter) = t_bestP;	// store the best member
+
+	d_bestvalit[i_iter] = t_bestC;		// store the best value 
 	
-	for (j = 0; j < i_D; j++) 
-	    t_bestitP[j] = t_bestP[j];
+	//for (j = 0; j < i_D; j++) t_bestitP[j] = t_bestP[j];
+	t_bestitP[j] = t_bestP;
 	t_bestitC = t_bestC;
       
 	i_iter++;
      
-	/*----computer dithering factor -----------------*/
-	f_dither = f_weight + unif_rand() * (1.0 - f_weight);
+	f_dither = f_weight + unif_rand() * (1.0 - f_weight);	// ----computer dithering factor -----------------
       
-	/*---DE/current-to-p-best/1 -----------------------------------------------------*/
-	if (i_strategy == 6) {
-	    /* create a copy of ta_oldC to avoid changing it */
-	    arma::rowvec temp_oldC = ta_oldC;
-	    /* sort temp_oldC to use sortIndex later */
-	    rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );
+	if (i_strategy == 6) {			// ---DE/current-to-p-best/1 -----------------------------------------------------
+	    arma::rowvec temp_oldC = ta_oldC;					// create a copy of ta_oldC to avoid changing it 
+	    rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );  	// sort temp_oldC to use sortIndex later 
 	}
 
-	/*----start of loop through ensemble------------------------*/
-	for (i = 0; i < i_NP; i++) {
+	for (i = 0; i < i_NP; i++) {		// ----start of loop through ensemble------------------------
 
-	    /*t_tmpP is the vector to mutate and eventually select*/
-	    //for (j = 0; j < i_D; j++) 
-	    //	t_tmpP[j] = ta_oldP.at(i,j);
-	    t_tmpP = ta_oldP.row(i);
+	    t_tmpP = ta_oldP.row(i);		// t_tmpP is the vector to mutate and eventually select
 	    t_tmpC = ta_oldC[i];
 
 	    permute(ia_urn2, urn_depth, i_NP, i, ia_urntmp.begin()); /* Pick 4 random and distinct */
