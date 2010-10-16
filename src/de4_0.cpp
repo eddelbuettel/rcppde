@@ -33,10 +33,8 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            int i_strategy, int i_D, int i_NP, int i_itermax,
            double *initialpopv, int i_storepopfreq, int i_storepopfrom,
            int i_specinitialpop, int i_check_winner, int i_av_winner,
-           arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP,
-	   double *gt_bestP,
-           double *gta_popC, double *gta_oldC, double *gta_newC, 
-	   double & t_bestC,	// now passed by reference in C++
+           arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::colvec & t_bestP, 
+	   arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double       & t_bestC,	
            double *t_bestitP, double *t_tmpP, double *tempP,
            arma::colvec & d_pop, arma::colvec & d_storepop, 
 	   arma::colvec & d_bestmemit, arma::colvec & d_bestvalit,
@@ -96,8 +94,8 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 	  i_strategy, i_D, i_NP, i_itermax,
 	  initialpopv.begin(), i_storepopfrom, i_storepopfreq, 
 	  i_specinitialpop, i_check_winner, i_av_winner,
-	  ta_popP, ta_oldP, ta_newP, t_bestP.memptr(),
-	  ta_popC.memptr(), ta_oldC.memptr(), ta_newC.memptr(), t_bestC,
+	  ta_popP, ta_oldP, ta_newP, t_bestP,
+	  ta_popC, ta_oldC, ta_newC, t_bestC,
 	  t_bestitP.memptr(), t_tmpP.memptr(), tempP.memptr(),
 	  d_pop, d_storepop, d_bestmemit, d_bestvalit,
 	  &i_iter, i_pPct, l_nfeval);
@@ -120,8 +118,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            double *initialpopv, int i_storepopfrom, int i_storepopfreq, 
            int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, 
-	   double *gt_bestP,
-           double *gta_popC, double *gta_oldC, double *gta_newC, 
+	   arma::colvec & t_bestP, arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, 
 	   double & t_bestC,
            double *t_bestitP, double *t_tmpP, double *tempP,
            arma::colvec &d_pop, arma::colvec &d_storepop, arma::colvec & d_bestmemit, arma::colvec & d_bestvalit,
@@ -147,7 +144,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
     int p_NP = round(i_pPct * i_NP);  		// choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
-    arma::icolvec sortIndex(i_NP); 		// sorted values of gta_oldC 
+    arma::icolvec sortIndex(i_NP); 		// sorted values of ta_oldC 
     for(i = 0; i < i_NP; i++) sortIndex[i] = i;
 
     int i_len, done, step, bound;    		// vars for when i_bs_flag == 1 */
@@ -184,18 +181,19 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		ta_popP.at(i,j) = initialpop.at(i,j);
 	} 
 	arma::rowvec r = ta_popP.row(i);
-	gta_popC[i] = evaluate(l_nfeval, r.memptr(), par, fcall, rho);
+	ta_popC[i] = evaluate(l_nfeval, r.memptr(), par, fcall, rho);
 
-	if (i == 0 || gta_popC[i] <= t_bestC) {
-	    t_bestC = gta_popC[i];
-	    for (j = 0; j < i_D; j++)  
-		gt_bestP[j] = ta_popP.at(i,j);
+	if (i == 0 || ta_popC[i] <= t_bestC) {
+	    t_bestC = ta_popC[i];
+	    //for (j = 0; j < i_D; j++)  
+	    //	t_bestP[j] = ta_popP.at(i,j);
+	    t_bestP = ta_popP.row(i);
 	}
     }
 
     /*---assign pointers to current ("old") population---*/
     ta_oldP = ta_popP;
-    gta_oldC = gta_popC;
+    ta_oldC = ta_popC;
   
     /*------Iteration loop--------------------------------------------*/
     int i_iter = 0;
@@ -218,14 +216,14 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
       
 	    /* store the best member */
 	    for(j = 0; j < i_D; j++) {
-		d_bestmemit[bestacnt] = gt_bestP[j];
+		d_bestmemit[bestacnt] = t_bestP[j];
 		bestacnt++;
 	    }
 	    /* store the best value */
 	    d_bestvalit[i_iter] = t_bestC;
       
 	    for (j = 0; j < i_D; j++) 
-		t_bestitP[j] = gt_bestP[j];
+		t_bestitP[j] = t_bestP[j];
 	    t_bestitC = t_bestC;
       
 	    i_iter++;
@@ -235,12 +233,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
       
 	    /*---DE/current-to-p-best/1 -----------------------------------------------------*/
 	    if (i_strategy == 6) {
-		/* create a copy of gta_oldC to avoid changing it */
-		Rcpp::NumericVector temp_oldC(i_NP); // double temp_oldC[i_NP];
-		for(j = 0; j < i_NP; j++) temp_oldC[j] = gta_oldC[j];
-        
+		/* create a copy of ta_oldC to avoid changing it */
+		arma::colvec temp_oldC = ta_oldC;
 		/* sort temp_oldC to use sortIndex later */
-		rsort_with_index( temp_oldC.begin(), sortIndex.begin(), i_NP );
+		rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );
 	    }
 
 	    /*----start of loop through ensemble------------------------*/
@@ -249,7 +245,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		/*t_tmpP is the vector to mutate and eventually select*/
 		for (j = 0; j < i_D; j++) 
 		    t_tmpP[j] = ta_oldP.at(i,j);
-		t_tmpC = gta_oldC[i];
+		t_tmpC = ta_oldC[i];
 
 		permute(ia_urn2, urn_depth, i_NP, i, ia_urntmp.begin()); /* Pick 4 random and distinct */
 
@@ -392,21 +388,21 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	
 		/* note that i_bs_flag means that we will choose the
 		 *best NP vectors from the old and new population later*/
-		if (t_tmpC <= gta_oldC[i] || i_bs_flag) {
+		if (t_tmpC <= ta_oldC[i] || i_bs_flag) {
 		    /* replace target with mutant */
 		    for (j = 0; j < i_D; j++) 
 			ta_newP.at(i,j) = t_tmpP[j];
-		    gta_newC[i] = t_tmpC;
+		    ta_newC[i] = t_tmpC;
 		    if (t_tmpC <= t_bestC) {
 			for (j = 0; j < i_D; j++) 
-			    gt_bestP[j]=t_tmpP[j];
+			    t_bestP[j] = t_tmpP[j];
 			t_bestC = t_tmpC;
 		    }
 		} 
 		else {
 		    for (j = 0; j < i_D; j++) 
 			ta_newP.at(i,j) = ta_oldP.at(i,j);
-		    gta_newC[i]=gta_oldC[i];
+		    ta_newC[i] = ta_oldC[i];
 	  
 		}
 	    } /* End mutation loop through pop. */
@@ -418,12 +414,12 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		for (i = 0; i < i_NP; i++) {
 		    for (j = 0; j < i_D; j++) 
 			ta_popP.at(i,j) = ta_oldP.at(i,j);
-		    gta_popC[i] = gta_oldC[i];
+		    ta_popC[i] = ta_oldC[i];
 		}
 		for (i = 0; i < i_NP; i++) {
 		    for (j = 0; j < i_D; j++) 
 			ta_popP.at(i_NP+i,j) = ta_newP.at(i,j);
-		    gta_popC[i_NP+i] = gta_newC[i];
+		    ta_popC[i_NP+i] = ta_newC[i];
 		}
 		i_len = 2 * i_NP;
 		step = i_len;  /* array length */
@@ -434,16 +430,16 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 			bound  = i_len - step;
 			for (j = 0; j < bound; j++) {
 			    i = j + step + 1;
-			    if (gta_popC[j] > gta_popC[i-1]) {
+			    if (ta_popC[j] > ta_popC[i-1]) {
 				for (k = 0; k < i_D; k++) 
 				    tempP[k] = ta_popP.at(i-1, k);
-				tempC = gta_popC[i-1];
+				tempC = ta_popC[i-1];
 				for (k = 0; k < i_D; k++) 
 				    ta_popP.at(i-1,k) = ta_popP.at(j,k);
-				gta_popC[i-1] = gta_popC[j];
+				ta_popC[i-1] = ta_popC[j];
 				for (k = 0; k < i_D; k++) 
 				    ta_popP.at(j,k) = tempP[k];
-				gta_popC[j] = tempC;
+				ta_popC[j] = tempC;
 				done = 0; 
 				/* if a swap has been made we are not finished yet */
 			    }  /* if */
@@ -454,7 +450,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		for (i = 0; i < i_NP; i++) {
 		    for (j = 0; j < i_D; j++) 
 			ta_newP.at(i,j) = ta_popP.at(i,j);
-		    gta_newC[i] = gta_popC[i];
+		    ta_newC[i] = ta_popC[i];
 		}
 	    } /*i_bs_flag*/
 
@@ -462,19 +458,19 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    for (i = 0; i < i_NP; i++) {
 		for (j = 0; j < i_D; j++) 
 		    ta_oldP.at(i,j) = ta_newP.at(i,j);
-		gta_oldC[i] = gta_newC[i];
+		ta_oldC[i] = ta_newC[i];
 	    }
 	    /* check if the best stayed the same, if necessary */
 	    if(i_check_winner)  {
 		same = 1;
 		for (j = 0; j < i_D; j++)
-		    if(t_bestitP[j] != gt_bestP[j]) {
+		    if (t_bestitP[j] != t_bestP[j]) {
 			same = 0;
 		    }
 		if(same && i_iter > 1)  {
 		    i_xav++;
 		    /* if re-evaluation of winner */
-		    tmp_best = evaluate(l_nfeval, gt_bestP, par, fcall, rho);
+		    tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);
 	 
 		    /* possibly letting the winner be the average of all past generations */
 		    if(i_av_winner)
@@ -489,14 +485,14 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	
 	    }
 	    for (j = 0; j < i_D; j++) 
-		t_bestitP[j] = gt_bestP[j];
+		t_bestitP[j] = t_bestP[j];
 	    t_bestitC = t_bestC;
 
 	    if( trace > 0 ) {
 		if( (i_iter % trace) == 0 ) {
 		    Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, t_bestC);
 		    for (j = 0; j < i_D; j++)
-			Rprintf("%12.6f", gt_bestP[j]);
+			Rprintf("%12.6f", t_bestP[j]);
 		    Rprintf("\n");
 		}
 	    }
