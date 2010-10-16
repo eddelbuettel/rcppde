@@ -92,7 +92,7 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
   ##
   ctrl$trace <- as.numeric(ctrl$trace)
   ctrl$specinitialpop <- as.numeric(ctrl$specinitialpop)
-  ctrl$initialpop <- as.numeric(ctrl$initialpop)
+  #ctrl$initialpop <- as.numeric(ctrl$initialpop)
 
   outC <- .Call("DEoptimC", lower, upper, fn1, ctrl, new.env(), PACKAGE = "RcppDE")
   ##

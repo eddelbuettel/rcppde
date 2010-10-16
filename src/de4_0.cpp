@@ -13,7 +13,7 @@ RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho
 void devol(double VTR, double f_weight, double fcross, int i_bs_flag, 
            arma::rowvec & lower, arma::rowvec & upper, SEXP fcall, SEXP rho, int i_trace,
            int i_strategy, int i_D, int i_NP, int i_itermax,
-           arma::rowvec & initpopv, int i_storepopfreq, int i_storepopfrom,
+           arma::mat & initpopm, int i_storepopfreq, int i_storepopfrom,
            int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::rowvec & t_bestP, 
 	   arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, double       & t_bestC,	
@@ -22,7 +22,6 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            int & i_iterations, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
-//RcppExport double evaluate(long & l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP env);
 
 RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     BEGIN_RCPP ;	// macro to fill in try part of try/catch exception handler
@@ -41,7 +40,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
     int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
     int i_storepopfreq   = Rcpp::as<int>(control["storepopfreq"]);  	// How often to store populations 
     int i_specinitialpop = Rcpp::as<int>(control["specinitialpop"]);  	// User-defined inital population 
-    Rcpp::NumericVector initialpopv = Rcpp::as<Rcpp::NumericVector>(control["initialpop"]);
+    Rcpp::NumericMatrix initialpopm = Rcpp::as<Rcpp::NumericMatrix>(control["initialpop"]);
     double f_weight      = Rcpp::as<double>(control["F"]);  		// stepsize 
     double f_cross       = Rcpp::as<double>(control["CR"]);  		// crossover probability 
     int i_bs_flag        = Rcpp::as<int>(control["bs"]);   		// Best of parent and child 
@@ -52,7 +51,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 
     arma::rowvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert three Rcpp vectors to arma vectors
     arma::rowvec maxbound(f_upper.begin(), f_upper.size(), false);
-    arma::rowvec initpopv(initialpopv.begin(), initialpopv.size(), false);
+    arma::mat initpopm(initialpopm.begin(), initialpopm.rows(), initialpopm.cols(), false);
 
     arma::mat ta_popP(i_NP*2, i_D);    					// Data structures for parameter vectors 
     arma::mat ta_oldP(i_NP,   i_D);
@@ -77,7 +76,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 
     // call actual Differential Evolution optimization given the parameters
     devol(VTR, f_weight, f_cross, i_bs_flag, minbound, maxbound, Rcpp::wrap(fn), Rcpp::wrap(rho), i_trace,
-	  i_strategy, i_D, i_NP, i_itermax, initpopv, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
+	  i_strategy, i_D, i_NP, i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
 	  ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP, tempP,
 	  d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
 
@@ -97,7 +96,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::rowvec & fa_minbound, arma::rowvec & fa_maxbound, SEXP fcall, SEXP rho, int i_trace,
            int i_strategy, int i_D, int i_NP, int i_itermax,
-           arma::rowvec & initialpopv, int i_storepopfrom, int i_storepopfreq, 
+           arma::mat & initialpopm, int i_storepopfrom, int i_storepopfreq, 
            int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, 
 	   arma::rowvec & t_bestP, arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, 
@@ -115,7 +114,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     int i_xav, popcnt, bestacnt, same; 		// lazy cnters 
-    double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best; 
+    double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best, tempC; 
     
     arma::mat initialpop(i_NP, i_D); 
 
@@ -126,7 +125,6 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     for(i = 0; i < i_NP; i++) sortIndex[i] = i;
 
     int i_len, done, step, bound;    		// vars for when i_bs_flag == 1 */
-    double tempC;
 
     GetRNGstate();
 
@@ -140,13 +138,14 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     i_nstorepop = (i_nstorepop < 0) ? 0 : i_nstorepop;
       
     if (i_specinitialpop > 0) {    		// if initial population provided, initialize with values 
-	k = 0;
-	for (j = 0; j < i_D; j++) { 		// FIXME: should really have a matrix passed in ! 
-	    for (i = 0; i < i_NP; i++) {
-		initialpop.at(i,j) = initialpopv[k];
-		k += 1;
-	    }
-	}
+	// k = 0;
+	// for (j = 0; j < i_D; j++) { 		// FIXME: should really have a matrix passed in ! 
+	//     for (i = 0; i < i_NP; i++) {
+	// 	initialpop.at(i,j) = initialpopv[k];
+	// 	k += 1;
+	//     }
+	// }
+	initialpop = initialpopm;
     }
     l_nfeval = 0;    				// number of function evaluations (this is an input via DEoptim.control, but we over-write it?) 
 
@@ -155,14 +154,12 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    for (j = 0; j < i_D; j++) {
 		ta_popP.at(i,j) = fa_minbound[j] + unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 	    }
-	} else { /* or user-specified initial member */
+	} else { 				// or user-specified initial member */
 	    ta_popP.row(i) = initialpop.row(i);
 	} 
 	ta_popC[i] = evaluate(l_nfeval, ta_popP.row(i), par, fcall, rho);
 	if (i == 0 || ta_popC[i] <= t_bestC) {
 	    t_bestC = ta_popC[i];
-	    //for (j = 0; j < i_D; j++)  
-	    //	t_bestP[j] = ta_popP.at(i,j);
 	    t_bestP = ta_popP.row(i);
 	}
     }
@@ -183,7 +180,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		    popcnt++;
 		}
 	    }
-	} /* end store pop */
+	} // end store pop 
       
 	d_bestmemit.row(i_iter) = t_bestP;	// store the best member
 	d_bestvalit[i_iter] = t_bestC;		// store the best value 
@@ -215,7 +212,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
-		    /* add fluctuation to random target */
+		    // add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
 		    k++;
@@ -226,7 +223,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
-		    /* add fluctuation to random target */
+		    // add fluctuation to random target 
 		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
 		    k++;
@@ -284,7 +281,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		k = 0;
 		if (unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
 		    do {
-			/* add fluctuation to random target */
+			// add fluctuation to random target 
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 			j = (j + 1) % i_D;
 			k++;
@@ -292,7 +289,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 		} else { 			// recombination with K = 0.5*(F+1) -. F-K-Rule 
 		    do {
-			/* add fluctuation to random target */
+			// add fluctuation to random target 
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + 0.5 * (f_weight + 1.0) * (ta_oldP.at(i_r2,j) + ta_oldP.at(i_r3,j) - 2 * ta_oldP.at(i_r1,j));
 			j = (j + 1) % i_D;
 			k++;
@@ -315,16 +312,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 	    // note that i_bs_flag means that we will choose the best NP vectors from the old and new population later
 	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {
-		//for (j = 0; j < i_D; j++) ta_newP.at(i,j) = t_tmpP[j];
 		ta_newP.row(i) = t_tmpP;				// replace target with mutant 
 		ta_newC[i] = t_tmpC;
 		if (t_tmpC <= t_bestC) {
-		    //for (j = 0; j < i_D; j++) t_bestP[j] = t_tmpP[j];
 		    t_bestP = t_tmpP;
 		    t_bestC = t_tmpC;
 		}
 	    } else {
-		//for (j = 0; j < i_D; j++) ta_newP.at(i,j) = ta_oldP.at(i,j);
 		ta_newP.row(i) = ta_oldP.row(i);
 		ta_newC[i] = ta_oldC[i];
 	    }
@@ -332,19 +326,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 	if (i_bs_flag) {	// examine old and new pop. and take the best NP members into next generation 
 	    
-	    // for (i = 0; i < i_NP; i++) {
-	    // 	for (j = 0; j < i_D; j++) 
-	    // 	    ta_popP.at(i,j) = ta_oldP.at(i,j);
-	    // 	ta_popC[i] = ta_oldC[i];
-	    // }
 	    ta_popP.rows(0, i_NP-1) = ta_oldP;
 	    ta_popC.rows(0, i_NP-1) = ta_oldC;
-
-	    // for (i = 0; i < i_NP; i++) {
-	    // 	for (j = 0; j < i_D; j++) 
-	    // 	    ta_popP.at(i_NP+i,j) = ta_newP.at(i,j);
-	    // 	ta_popC[i_NP+i] = ta_newC[i];
-	    // }
 	    ta_popP.rows(i_NP, 2*i_NP-1) = ta_newP;
 	    ta_popC.rows(i_NP, 2*i_NP-1) = ta_newC;
 
@@ -358,13 +341,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		    for (j = 0; j < bound; j++) {
 			i = j + step + 1;
 			if (ta_popC[j] > ta_popC[i-1]) {
-			    //for (k = 0; k < i_D; k++) tempP[k] = ta_popP.at(i-1, k);
 			    tempP = ta_popP.row(i-1);
 			    tempC = ta_popC[i-1];
-			    //for (k = 0; k < i_D; k++) ta_popP.at(i-1,k) = ta_popP.at(j,k);
 			    ta_popP.row(i-1) = ta_popP.row(j);
 			    ta_popC[i-1] = ta_popC[j];
-			    //for (k = 0; k < i_D; k++) ta_popP.at(j,k) = tempP[k];
 			    ta_popP.row(j) = tempP;
 			    ta_popC[j] = tempC;
 			    done = 0; 
@@ -373,23 +353,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		    }  // for 
 		} while (!done);   // do .. while 
 	    } // while (step > 1) 
-	    /* now the best NP are in first NP places in gta_pop, use them */
-	    // for (i = 0; i < i_NP; i++) {
-	    // 	for (j = 0; j < i_D; j++) 
-	    // 	    ta_newP.at(i,j) = ta_popP.at(i,j);
-	    // 	ta_newC[i] = ta_popC[i];
-	    // }
-	    ta_newP = ta_popP;
+	    ta_newP = ta_popP;		// now the best NP are in first NP places in gta_pop, use them 
 	    ta_newC = ta_popC;
 	} // i_bs_flag
 
-	// have selected NP mutants move on to next generation 
-	// for (i = 0; i < i_NP; i++) {
-	//     for (j = 0; j < i_D; j++) 
-	// 	ta_oldP.at(i,j) = ta_newP.at(i,j);
-	//     ta_oldC[i] = ta_newC[i];
-	// }
-	ta_oldP = ta_newP;
+	ta_oldP = ta_newP;		// have selected NP mutants move on to next generation 
 	ta_oldC = ta_newC;
 
 	if (i_check_winner)  {		// check if the best stayed the same, if necessary 
@@ -410,9 +378,6 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		i_xav = 1;
 	    }
 	}
-	// for (j = 0; j < i_D; j++) 
-	//     t_bestitP[j] = t_bestP[j];
-	// t_bestitC = t_bestC;
 	t_bestitP = t_bestP;
 	t_bestitC = t_bestC;
 
@@ -426,13 +391,6 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	}
     } // end loop through generations 
     
-    // k = 0;	    // last population 
-    // for (i = 0; i < i_NP; i++) {
-    // 	for (j = 0; j < i_D; j++) {
-    // 	    d_pop[k] = ta_oldP.at(i,j);      
-    // 	    k++;
-    // 	}
-    // }
     d_pop = ta_oldP;
     i_iterations = i_iter;
 
