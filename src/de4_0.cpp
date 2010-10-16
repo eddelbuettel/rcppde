@@ -43,7 +43,7 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            double *gd_pop, double *gd_storepop, double *gd_bestmemit, double *gd_bestvalit,
            int *gi_iter, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
-extern "C" double evaluate(long *l_nfeval, double *param, SEXP par, SEXP fcall, SEXP env);
+RcppExport double evaluate(long &l_nfeval, double *param, SEXP par, SEXP fcall, SEXP env);
 
 RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     BEGIN_RCPP ;
@@ -113,7 +113,6 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 			      Rcpp::Named("pop")       = d_pop,         // sexp_pop,
 			      Rcpp::Named("storepop")  = d_storepop);   // sexp_storepop)
     END_RCPP
-
 }
 
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
@@ -121,9 +120,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            int i_strategy, int i_D, int i_NP, int i_itermax,
            double *initialpopv, int i_storepopfrom, int i_storepopfreq, 
            int i_specinitialpop, int i_check_winner, int i_av_winner,
-           /*double **gta_popP*/ arma::mat &ta_popP, 
-	   /*double **gta_oldP*/ arma::mat &ta_oldP, 
-	   /*double **gta_newP*/ arma::mat &ta_newP, 
+           arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, 
 	   double *gt_bestP,
            double *gta_popC, double *gta_oldC, double *gta_newC, 
 	   double & t_bestC,
@@ -225,7 +222,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	  ta_popP.at(i,j) = initialpop.at(i,j);
     } 
     arma::rowvec r = ta_popP.row(i);
-    gta_popC[i] = evaluate(&l_nfeval, r.memptr(), par, fcall, rho);
+    gta_popC[i] = evaluate(l_nfeval, r.memptr(), par, fcall, rho);
 
     if (i == 0 || gta_popC[i] <= t_bestC) {
       t_bestC = gta_popC[i];
@@ -429,8 +426,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 	/*------Trial mutation now in t_tmpP-----------------*/
 	/* Evaluate mutant in t_tmpP[]*/
-
-	t_tmpC = evaluate(&l_nfeval, t_tmpP, par, fcall, rho); 
+	t_tmpC = evaluate(l_nfeval, t_tmpP, par, fcall, rho); 
 	
 	/* note that i_bs_flag means that we will choose the
 	 *best NP vectors from the old and new population later*/
@@ -516,7 +512,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	if(same && i_iter > 1)  {
 	  i_xav++;
 	  /* if re-evaluation of winner */
-	  tmp_best = evaluate(&l_nfeval, gt_bestP, par, fcall, rho);
+	  tmp_best = evaluate(l_nfeval, gt_bestP, par, fcall, rho);
 	 
 	  /* possibly letting the winner be the average of all past generations */
 	  if(i_av_winner)
@@ -558,7 +554,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
   PutRNGstate();
 }
 
-void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[])
+inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[])
 /********************************************************************
  ** Function       : void permute(int ia_urn2[], int i_urn2_depth)
  ** Author         : Rainer Storn (w/bug fixes contributed by DEoptim users)
