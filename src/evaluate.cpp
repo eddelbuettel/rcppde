@@ -7,9 +7,12 @@
 
 #include <RcppArmadillo.h>
 
-RcppExport double evaluate(long &l_nfeval, const arma::rowvec & param, SEXP parS, SEXP fcall, SEXP env) {
+//RcppExport double evaluate(long &l_nfeval, const arma::rowvec & param, SEXP parS, SEXP fcall, SEXP env) {
+RcppExport double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env) {
     Rcpp::NumericVector par(parS); 			// access parS as numeric vector to fill it
-    std::copy(param.begin(), param.end(), par.begin()); // STL way of copying
+    //memcpy(par.begin(), param.memptr(), par.size() * sizeof(double));
+    //std::copy(param.begin(), param.end(), par.begin()); // STL way of copying
+    memcpy(par.begin(), param, par.size() * sizeof(double));
     SEXP fn = ::Rf_lang2(fcall, par); 			// this could be done with Rcpp 
     SEXP sexp_fvec = ::Rf_eval(fn, env);		// but is still a lot slower right now
     double f_result = Rcpp::as<double>(sexp_fvec);

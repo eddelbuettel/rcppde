@@ -11,17 +11,18 @@
 
 RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho);
 void devol(double VTR, double f_weight, double fcross, int i_bs_flag, 
-           arma::colvec & lower, arma::colvec & upper, SEXP fcall, SEXP rho, int i_trace,
+           arma::rowvec & lower, arma::rowvec & upper, SEXP fcall, SEXP rho, int i_trace,
            int i_strategy, int i_D, int i_NP, int i_itermax,
-           arma::colvec & initpopv, int i_storepopfreq, int i_storepopfrom,
+           arma::rowvec & initpopv, int i_storepopfreq, int i_storepopfrom,
            int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::rowvec & t_bestP, 
-	   arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double       & t_bestC,	
-           arma::colvec & t_bestitP, arma::rowvec & t_tmpP, arma::colvec & tempP,
-           arma::colvec & d_pop, arma::colvec & d_storepop, arma::colvec & d_bestmemit, arma::colvec & d_bestvalit,
+	   arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, double       & t_bestC,	
+           arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
+           arma::rowvec & d_pop, arma::rowvec & d_storepop, arma::rowvec & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
-RcppExport double evaluate(long &l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
+//RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
+RcppExport double evaluate(long & l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP env);
 
 RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     BEGIN_RCPP ;	// macro to fill in try part of try/catch exception handler
@@ -49,29 +50,29 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
     int i_av_winner      = Rcpp::as<int>(control["avWinner"]);  	// Average 
     double i_pPct        = Rcpp::as<double>(control["p"]); 		// p to define the top 100p% best solutions 
 
-    arma::colvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert three Rcpp vectors to arma vectors
-    arma::colvec maxbound(f_upper.begin(), f_upper.size(), false);
-    arma::colvec initpopv(initialpopv.begin(), initialpopv.size(), false);
+    arma::rowvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert three Rcpp vectors to arma vectors
+    arma::rowvec maxbound(f_upper.begin(), f_upper.size(), false);
+    arma::rowvec initpopv(initialpopv.begin(), initialpopv.size(), false);
 
     arma::mat ta_popP(i_NP*2, i_D);    					// Data structures for parameter vectors 
     arma::mat ta_oldP(i_NP,   i_D);
     arma::mat ta_newP(i_NP,   i_D);
     arma::rowvec t_bestP(i_D); 
 
-    arma::colvec ta_popC(i_NP*2);  				    	// Data structures for obj. fun. values associated with par. vectors 
-    arma::colvec ta_oldC(i_NP);
-    arma::colvec ta_newC(i_NP);
+    arma::rowvec ta_popC(i_NP*2);  				    	// Data structures for obj. fun. values associated with par. vectors 
+    arma::rowvec ta_oldC(i_NP);
+    arma::rowvec ta_newC(i_NP);
     double t_bestC; 
 
-    arma::colvec t_bestitP(i_D);
+    arma::rowvec t_bestitP(i_D);
     arma::rowvec t_tmpP(i_D); 
-    arma::colvec tempP(i_D);
+    arma::rowvec tempP(i_D);
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
-    arma::colvec d_pop(i_NP*i_D); 
-    arma::colvec d_storepop(i_NP*i_D*i_nstorepop); 
-    arma::colvec d_bestmemit(i_itermax*i_D);       
-    arma::colvec d_bestvalit(i_itermax); 	 
+    arma::rowvec d_pop(i_NP*i_D); 
+    arma::rowvec d_storepop(i_NP*i_D*i_nstorepop); 
+    arma::rowvec d_bestmemit(i_itermax*i_D);       
+    arma::rowvec d_bestvalit(i_itermax); 	 
     int i_iter = 0;
 
     // call actual Differential Evolution optimization given the parameters
@@ -94,15 +95,15 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 
 
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
-           arma::colvec & fa_minbound, arma::colvec & fa_maxbound, SEXP fcall, SEXP rho, int i_trace,
+           arma::rowvec & fa_minbound, arma::rowvec & fa_maxbound, SEXP fcall, SEXP rho, int i_trace,
            int i_strategy, int i_D, int i_NP, int i_itermax,
-           arma::colvec & initialpopv, int i_storepopfrom, int i_storepopfreq, 
+           arma::rowvec & initialpopv, int i_storepopfrom, int i_storepopfreq, 
            int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, 
-	   arma::rowvec & t_bestP, arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, 
+	   arma::rowvec & t_bestP, arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, 
 	   double & t_bestC,
-           arma::colvec & t_bestitP, arma::rowvec & t_tmpP, arma::colvec & tempP,
-           arma::colvec &d_pop, arma::colvec &d_storepop, arma::colvec & d_bestmemit, arma::colvec & d_bestvalit,
+           arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
+           arma::rowvec &d_pop, arma::rowvec &d_storepop, arma::rowvec & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
     const int urn_depth = 5;   			// 4 + one index to avoid 
@@ -121,7 +122,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     int i_pbest;    				// vars for DE/current-to-p-best/1 
     int p_NP = round(i_pPct * i_NP);  		// choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
-    arma::icolvec sortIndex(i_NP); 		// sorted values of ta_oldC 
+    arma::irowvec sortIndex(i_NP); 		// sorted values of ta_oldC 
     for(i = 0; i < i_NP; i++) sortIndex[i] = i;
 
     int i_len, done, step, bound;    		// vars for when i_bs_flag == 1 */
@@ -157,7 +158,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	} else { /* or user-specified initial member */
 	    ta_popP.row(i) = initialpop.row(i);
 	} 
-	ta_popC[i] = evaluate(l_nfeval, ta_popP.row(i), par, fcall, rho);
+	arma::rowvec r = ta_popP.row(i);
+	ta_popC[i] = evaluate(l_nfeval, r.memptr(), par, fcall, rho);
 	if (i == 0 || ta_popC[i] <= t_bestC) {
 	    t_bestC = ta_popC[i];
 	    //for (j = 0; j < i_D; j++)  
@@ -205,7 +207,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	/*---DE/current-to-p-best/1 -----------------------------------------------------*/
 	if (i_strategy == 6) {
 	    /* create a copy of ta_oldC to avoid changing it */
-	    arma::colvec temp_oldC = ta_oldC;
+	    arma::rowvec temp_oldC = ta_oldC;
 	    /* sort temp_oldC to use sortIndex later */
 	    rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );
 	}
@@ -354,7 +356,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 
 	    /*------Trial mutation now in t_tmpP-----------------*/
-	    t_tmpC = evaluate(l_nfeval, t_tmpP, par, fcall, rho); 	    // Evaluate mutant in t_tmpP[]
+	    t_tmpC = evaluate(l_nfeval, t_tmpP.memptr(), par, fcall, rho); 	    // Evaluate mutant in t_tmpP[]
 
 	    /* note that i_bs_flag means that we will choose the
 	     *best NP vectors from the old and new population later*/
@@ -438,7 +440,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		}
 	    if(same && i_iter > 1)  {
 		i_xav++;
-		tmp_best = evaluate(l_nfeval, t_bestP, par, fcall, rho);			// if re-evaluation of winner 
+		tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);			// if re-evaluation of winner 
 
 		/* possibly letting the winner be the average of all past generations */
 		if(i_av_winner)
@@ -499,15 +501,12 @@ inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int 
  ** Return Value   : -
  *********************************************************************/
 {
-    int  i, k, i_urn1, i_urn2;
-    // double ia_urn1[i_NP];
-  
     GetRNGstate();
 
-    k = i_NP;
-    i_urn1 = 0;
-    i_urn2 = 0;
-    for (i = 0; i < i_NP; i++)
+    int k = i_NP;
+    int i_urn1 = 0;
+    int i_urn2 = 0;
+    for (int i = 0; i < i_NP; i++)
 	ia_urn1[i] = i; /* initialize urn1 */
 
     i_urn1 = i_avoid;                      /* get rid of the index to be avoided and place it in position 0. */
