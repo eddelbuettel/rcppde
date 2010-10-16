@@ -9,5 +9,5 @@ Description: This package provides an efficient C++ based implementation of the
   It aims to show that "easier, shorter, faster: pick any three" is achievable
   when moving code from plain old C to modern C++.
 License: GPL (>= 2)
-Depends: Rcpp
-LinkingTo: Rcpp
+Depends: Rcpp, RcppArmadillo
+LinkingTo: Rcpp, RcppArmadillo

@@ -1,0 +1,5 @@
+##PKG_CXXFLAGS="-fopenmp"
+##PKG_CXXFLAGS=-ftree-parallelize-loops=8
+##PKG_LIBS=$(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -fopenmp
+##PKG_LIBS= -fopenmp -lgomp $(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+PKG_LIBS= $(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)

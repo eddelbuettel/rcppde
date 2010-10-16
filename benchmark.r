@@ -62,5 +62,6 @@ rownames(res) <- c("Rastrigin2", "Rastrigin5", "Rastrigin20",
 res$ratioRcppToBasic <- res[,2]/res[,1]
 res$pctGainOfRcpp <- (1-res[,2]/res[,1])*100
 
+svnver <- system("svnversion", intern=TRUE)
+cat("# At ", format(Sys.time()), "\n# SVN ", svnver, "\n")
 print(res)
-

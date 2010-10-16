@@ -1,5 +1,9 @@
-/***************************************************************
+// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; tab-width: 8 -*-
+//
+// "Port" of DEoptim (2.0.7) to Rcpp/RcppArmadillo/Armadillo
+// Copyright (C) 2010  Dirk Eddelbuettel <edd@debian.org>
 
+/*
 Implementation of DE based loosely on DE-Engine v4.0, Rainer Storn, 2004   
 by Katharine Mullen, 2009
 modified by Joshua Ulrich, 2010
@@ -19,16 +23,11 @@ typedef struct t_pop
 I have not been able to use Calloc or R_alloc to set aside memory for 
 type t_pop dynamically; I did not look into the bowels but believe this
 is likely a limitation of these functions.  
+*/
 
-***************************************************************/
+#include <RcppArmadillo.h>
 
-/*------Include section----------------------------------------------*/
-
-#include <R.h>
-#include <Rdefines.h>
-
-SEXP getListElement(SEXP list, char *str);
-SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho);
+RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho);
 void devol(double VTR, double f_weight, double fcross, int i_bs_flag, 
            double *lower, double *upper, SEXP fcall, SEXP rho, int i_trace,
            int i_strategy, int i_D, int i_NP, int i_itermax,
@@ -39,167 +38,91 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            double *t_bestitP, double *t_tmpP, double *tempP,
            double *gd_pop, double *gd_storepop, double *gd_bestmemit, double *gd_bestvalit,
            int *gi_iter, double i_pPct, long *l_nfeval);
-void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid);
-double evaluate(long *l_nfeval, double *param, SEXP par, SEXP fcall, SEXP env);
+void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
+extern "C" double evaluate(long *l_nfeval, double *param, SEXP par, SEXP fcall, SEXP env);
+
+RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fnSexp, SEXP controlSexp, SEXP rhoSexp) {
+    BEGIN_RCPP ;
+
+    Rcpp::Function fn(fnSexp);
+    Rcpp::Environment rho(rhoSexp);
+
+    Rcpp::NumericVector f_lower(lower), f_upper(upper); 	// User-defined bounds
+    Rcpp::List          control(controlSexp); 			// named list of params
+
+    double VTR           = Rcpp::as<double>(control["VTR"]);		// value to reach
+    int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
+    int i_itermax        = Rcpp::as<int>(control["itermax"]);		// Maximum number of generations
+    long l_nfeval        = 0;//Rcpp::as<int>(control["nfeval"]);	// number of function evaluations    
+    int i_D              = Rcpp::as<int>(control["npar"]);		// Dimension of parameter vector
+    int i_NP             = Rcpp::as<int>(control["NP"]);		// Number of population members
+    int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
+    int i_storepopfreq   = Rcpp::as<int>(control["storepopfreq"]);  	// How often to store populations 
+    int i_specinitialpop = Rcpp::as<int>(control["specinitialpop"]);  	// User-defined inital population 
+    Rcpp::NumericVector initialpopv = Rcpp::as<Rcpp::NumericVector>(control["initialpop"]);
+    double f_weight = Rcpp::as<double>(control["F"]);  			// stepsize 
+    double f_cross = Rcpp::as<double>(control["CR"]);  			// crossover probability 
+    int i_bs_flag = Rcpp::as<int>(control["bs"]);   			// Best of parent and child 
+    int i_trace = Rcpp::as<int>(control["trace"]);  			// Print progress? 
+    int i_check_winner = Rcpp::as<int>(control["checkWinner"]); 	// Re-evaluate best parameter vector? 
+    int i_av_winner = Rcpp::as<int>(control["avWinner"]);  		// Average 
+    double i_pPct = Rcpp::as<double>(control["p"]); 			// p to define the top 100p% best solutions 
 
 
-/*------General functions-----------------------------------------*/
+    /* Data structures for parameter vectors */
+    double **gta_popP = (double **)R_alloc(i_NP*2,sizeof(double *));
+    for (int i = 0; i < (i_NP*2); i++) 
+	gta_popP[i] = (double *)R_alloc(i_D,sizeof(double));
 
-SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho)
-{
-  int i, j;
+    double **gta_oldP = (double **)R_alloc(i_NP,sizeof(double *));
+    for (int i = 0; i < i_NP; i++) 
+	gta_oldP[i] = (double *)R_alloc(i_D,sizeof(double));
 
-  /* External pointers to return to R */
-  SEXP sexp_bestmem, sexp_bestval, sexp_nfeval, sexp_iter,
-    out, out_names, sexp_pop, sexp_storepop, sexp_bestmemit, sexp_bestvalit;
-
-  if (!isFunction(fn))
-    error("fn is not a function!");
-  if (!isEnvironment(rho))
-    error("rho is not an environment!");
-
-  /*-----Initialization of annealing parameters-------------------------*/
-  /* value to reach */
-  double VTR = NUMERIC_VALUE(getListElement(control, "VTR"));
-  /* chooses DE-strategy */
-  int i_strategy = INTEGER_VALUE(getListElement(control, "strategy"));
-  /* Maximum number of generations */
-  int i_itermax = INTEGER_VALUE(getListElement(control, "itermax"));
-  /* Number of objective function evaluations */
-  long l_nfeval = (long)NUMERIC_VALUE(getListElement(control, "nfeval"));
-  /* Dimension of parameter vector */
-  int i_D = INTEGER_VALUE(getListElement(control, "npar"));
-  /* Number of population members */
-  int i_NP = INTEGER_VALUE(getListElement(control, "NP"));
-  /* When to start storing populations */
-  int i_storepopfrom = INTEGER_VALUE(getListElement(control, "storepopfrom"))-1;
-  /* How often to store populations */
-  int i_storepopfreq = INTEGER_VALUE(getListElement(control, "storepopfreq"));
-  /* User-defined inital population */
-  int i_specinitialpop = INTEGER_VALUE(getListElement(control, "specinitialpop"));
-  double *initialpopv = NUMERIC_POINTER(getListElement(control, "initialpop"));
-  /* User-defined bounds */
-  double *f_lower = NUMERIC_POINTER(lower);
-  double *f_upper = NUMERIC_POINTER(upper);
-  /* stepsize */
-  double f_weight = NUMERIC_VALUE(getListElement(control, "F"));
-  /* crossover probability */
-  double f_cross = NUMERIC_VALUE(getListElement(control, "CR"));
-  /* Best of parent and child */
-  int i_bs_flag = NUMERIC_VALUE(getListElement(control, "bs"));
-  /* Print progress? */
-  int i_trace = NUMERIC_VALUE(getListElement(control, "trace"));
-  /* Re-evaluate best parameter vector? */
-  int i_check_winner = NUMERIC_VALUE(getListElement(control, "checkWinner"));
-  /* Average */
-  int i_av_winner = NUMERIC_VALUE(getListElement(control, "avWinner"));
-  /* p to define the top 100p% best solutions */
-  double i_pPct = NUMERIC_VALUE(getListElement(control, "p"));
-
-  /* Data structures for parameter vectors */
-  double **gta_popP = (double **)R_alloc(i_NP*2,sizeof(double *));
-  for (int i = 0; i < (i_NP*2); i++) 
-    gta_popP[i] = (double *)R_alloc(i_D,sizeof(double));
-
-  double **gta_oldP = (double **)R_alloc(i_NP,sizeof(double *));
-  for (int i = 0; i < i_NP; i++) 
-    gta_oldP[i] = (double *)R_alloc(i_D,sizeof(double));
-
-  double **gta_newP = (double **)R_alloc(i_NP,sizeof(double *));
-  for (int i = 0; i < i_NP; i++) 
-    gta_newP[i] = (double *)R_alloc(i_D,sizeof(double));
+    double **gta_newP = (double **)R_alloc(i_NP,sizeof(double *));
+    for (int i = 0; i < i_NP; i++) 
+	gta_newP[i] = (double *)R_alloc(i_D,sizeof(double));
   
-  double *gt_bestP = (double *)R_alloc(1,sizeof(double) * i_D);
+    Rcpp::NumericVector t_bestP(i_D); 		// double *t_bestP = (double *)R_alloc(1,sizeof(double) * i_D);
 
-  /* Data structures for objective function values associated with
-   * parameter vectors */
-  double *gta_popC = (double *)R_alloc(i_NP*2,sizeof(double));
-  double *gta_oldC = (double *)R_alloc(i_NP,sizeof(double));
-  double *gta_newC = (double *)R_alloc(i_NP,sizeof(double));
-  double *gt_bestC = (double *)R_alloc(1,sizeof(double));
+    /* Data structures for objective function values associated with parameter vectors */
+    double *gta_popC = (double *)R_alloc(i_NP*2,sizeof(double));
+    double *gta_oldC = (double *)R_alloc(i_NP,sizeof(double));
+    double *gta_newC = (double *)R_alloc(i_NP,sizeof(double));
+    double t_bestC; 	//  = (double *)R_alloc(1,sizeof(double));       
 
-  double *t_bestitP = (double *)R_alloc(1,sizeof(double) * i_D);
-  double *t_tmpP = (double *)R_alloc(1,sizeof(double) * i_D);
-  double *tempP = (double *)R_alloc(1,sizeof(double) * i_D);
+    Rcpp::NumericVector t_bestitP(i_D);			// double *t_bestitP = (double *)R_alloc(1,sizeof(double) * i_D);
+    Rcpp::NumericVector t_tmpP(i_D); 			// double *t_tmpP = (double *)R_alloc(1,sizeof(double) * i_D);
+    Rcpp::NumericVector tempP(i_D);			// double *tempP = (double *)R_alloc(1,sizeof(double) * i_D);
 
-  int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
-  double *gd_pop = (double *)R_alloc(i_NP*i_D,sizeof(double));
-  double *gd_storepop = (double *)R_alloc(i_NP,sizeof(double) * i_D * i_nstorepop);
-  double *gd_bestmemit = (double *)R_alloc(i_itermax*i_D,sizeof(double));
-  double *gd_bestvalit = (double *)R_alloc(i_itermax,sizeof(double));
-  int gi_iter = 0;
+    int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
+    Rcpp::NumericVector d_pop(i_NP*i_D);                  // double *d_pop = (double *)R_alloc(i_NP*i_D,sizeof(double));
+    Rcpp::NumericVector d_storepop(i_NP*i_D*i_nstorepop); // double *d_storepop = (double *)R_alloc(i_NP,sizeof(double) * i_D * i_nstorepop);
+    Rcpp::NumericVector d_bestmemit(i_itermax*i_D);       // double *d_bestmemit = (double *)R_alloc(i_itermax*i_D,sizeof(double));
+    Rcpp::NumericVector d_bestvalit(i_itermax); 	 	// double *d_bestvalit = (double *)R_alloc(i_itermax,sizeof(double));
+    int i_iter = 0;
 
-  /*---optimization--------------------------------------*/
-  devol(VTR, f_weight, f_cross, i_bs_flag, f_lower, f_upper, fn, rho, i_trace,
-        i_strategy, i_D, i_NP, i_itermax,
-        initialpopv, i_storepopfrom, i_storepopfreq, 
-        i_specinitialpop, i_check_winner, i_av_winner,
-        gta_popP, gta_oldP, gta_newP, gt_bestP,
-        gta_popC, gta_oldC, gta_newC, gt_bestC,
-        t_bestitP, t_tmpP, tempP,
-        gd_pop, gd_storepop, gd_bestmemit, gd_bestvalit,
-        &gi_iter, i_pPct, &l_nfeval);
-  /*---end optimization----------------------------------*/
+    /*---optimization--------------------------------------*/
+    devol(VTR, f_weight, f_cross, i_bs_flag, f_lower.begin(), f_upper.begin(), Rcpp::wrap(fn), Rcpp::wrap(rho), i_trace,
+	  i_strategy, i_D, i_NP, i_itermax,
+	  initialpopv.begin(), i_storepopfrom, i_storepopfreq, 
+	  i_specinitialpop, i_check_winner, i_av_winner,
+	  gta_popP, gta_oldP, gta_newP, t_bestP.begin(),
+	  gta_popC, gta_oldC, gta_newC, &t_bestC,
+	  t_bestitP.begin(), t_tmpP.begin(), tempP.begin(),
+	  d_pop.begin(), d_storepop.begin(), d_bestmemit.begin(), d_bestvalit.begin(),
+	  &i_iter, i_pPct, &l_nfeval);
+    /*---end optimization----------------------------------*/
 
-  PROTECT(sexp_bestmem = NEW_NUMERIC(i_D));
-  for (i = 0; i < i_D; i++) {
-    NUMERIC_POINTER(sexp_bestmem)[i] = gt_bestP[i];
-  }
+    return Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,       // sexp_bestmem,
+			      Rcpp::Named("bestval")   = t_bestC,       // sexp_bestval,
+			      Rcpp::Named("nfeval")    = l_nfeval,   	// sexp_nfeval,
+			      Rcpp::Named("iter")      = i_iter,	// sexp_iter,
+			      Rcpp::Named("bestmemit") = d_bestmemit,   // sexp_bestmemit,
+			      Rcpp::Named("bestvalit") = d_bestvalit,	// sexp_bestvalit,
+			      Rcpp::Named("pop")       = d_pop,         // sexp_pop,
+			      Rcpp::Named("storepop")  = d_storepop);   // sexp_storepop)
+    END_RCPP
 
-  j = i_NP * i_D;
-  PROTECT(sexp_pop = NEW_NUMERIC(j));
-  for (i = 0; i < j; i++)
-    NUMERIC_POINTER(sexp_pop)[i] = gd_pop[i];
-
-  j =  i_nstorepop * i_NP * i_D;
-  PROTECT(sexp_storepop = NEW_NUMERIC(j));
-  for (i = 0; i < j; i++)
-    NUMERIC_POINTER(sexp_storepop)[i] = gd_storepop[i];
-
-  j = gi_iter * i_D;
-  PROTECT(sexp_bestmemit = NEW_NUMERIC(j));
-  for (i = 0; i < j; i++) 
-    NUMERIC_POINTER(sexp_bestmemit)[i] = gd_bestmemit[i];
-  j = gi_iter;
-  PROTECT(sexp_bestvalit = NEW_NUMERIC(j));
-  for (i = 0; i < j; i++)
-    NUMERIC_POINTER(sexp_bestvalit)[i] = gd_bestvalit[i];
-
-  PROTECT(sexp_bestval = NEW_NUMERIC(1));
-  NUMERIC_POINTER(sexp_bestval)[0] = gt_bestC[0];
-
-  PROTECT(sexp_nfeval = NEW_INTEGER(1));
-  //INTEGER_POINTER(sexp_nfeval)[0] = 0;
-  INTEGER_POINTER(sexp_nfeval)[0] = l_nfeval;
-
-  PROTECT(sexp_iter = NEW_INTEGER(1));
-  INTEGER_POINTER(sexp_iter)[0] = gi_iter;
-
-  PROTECT(out = NEW_LIST(8));
-  SET_VECTOR_ELT(out, 0, sexp_bestmem);
-  SET_VECTOR_ELT(out, 1, sexp_bestval);
-  SET_VECTOR_ELT(out, 2, sexp_nfeval);
-  SET_VECTOR_ELT(out, 3, sexp_iter);
-  SET_VECTOR_ELT(out, 4, sexp_bestmemit);
-  SET_VECTOR_ELT(out, 5, sexp_bestvalit);
-  SET_VECTOR_ELT(out, 6, sexp_pop);
-  SET_VECTOR_ELT(out, 7, sexp_storepop);
-
-  PROTECT(out_names = NEW_STRING(8));
-  SET_STRING_ELT(out_names, 0, mkChar("bestmem"));
-  SET_STRING_ELT(out_names, 1, mkChar("bestval"));
-  SET_STRING_ELT(out_names, 2, mkChar("nfeval"));
-  SET_STRING_ELT(out_names, 3, mkChar("iter"));
-  SET_STRING_ELT(out_names, 4, mkChar("bestmemit"));
-  SET_STRING_ELT(out_names, 5, mkChar("bestvalit"));
-  SET_STRING_ELT(out_names, 6, mkChar("pop"));
-  SET_STRING_ELT(out_names, 7, mkChar("storepop"));
-
-  SET_NAMES(out, out_names);
-
-  UNPROTECT(10);
-
-  return out;
 }
 
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
@@ -214,50 +137,52 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            int *gi_iter, double i_pPct, long *l_nfeval)
 {
 
-#define URN_DEPTH  5   /* 4 + one index to avoid */
+    const int urn_depth = 5;   		// 4 + one index to avoid 
 
-  /* initialize parameter vector to pass to evaluate function */
-  SEXP par; PROTECT(par = NEW_NUMERIC(i_D));
+    Rcpp::NumericVector par(i_D);  	// initialize parameter vector to pass to evaluate function 
   
-  int i, j, k;  /* counting variables */
-  int i_r1, i_r2, i_r3, i_r4;  /* placeholders for random indexes */
+    int i, j, k;  /* counting variables */
+    int i_r1, i_r2, i_r3, i_r4;  /* placeholders for random indexes */
+    
+    int ia_urn2[urn_depth];
+    Rcpp::IntegerVector ia_urntmp(i_NP);
 
-  int ia_urn2[URN_DEPTH];
-  int i_nstorepop, i_xav;
-  i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
+    int i_nstorepop, i_xav;
+    i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
   
-  int popcnt, bestacnt, same; /* lazy cnters */
+    int popcnt, bestacnt, same; /* lazy cnters */
+    
+    double *fa_minbound = lower;
+    double *fa_maxbound = upper;
+    double f_jitter, f_dither;
+    
+    double t_bestitC;
+    double t_tmpC, tmp_best; 
+    
+    arma::mat initialpop(i_NP, i_D);   // double initialpop[i_NP][i_D];
 
-  double *fa_minbound = lower;
-  double *fa_maxbound = upper;
-  double f_jitter, f_dither;
- 
-  double t_bestitC;
-  double t_tmpC, tmp_best; 
-  
-  double initialpop[i_NP][i_D];
-  
-  /* vars for DE/current-to-p-best/1 */
-  int i_pbest;
-  int p_NP = round(i_pPct * i_NP);  /* choose at least two best solutions */
-      p_NP = p_NP < 2 ? 2 : p_NP;
-  int sortIndex[i_NP];              /* sorted values of gta_oldC */
-  for(i = 0; i < i_NP; i++) sortIndex[i] = i;
+    /* vars for DE/current-to-p-best/1 */
+    int i_pbest;
+    int p_NP = round(i_pPct * i_NP);  /* choose at least two best solutions */
+    p_NP = p_NP < 2 ? 2 : p_NP;
+    arma::icolvec sortIndex(i_NP); //  int sortIndex[i_NP];              /* sorted values of gta_oldC */
+    for(i = 0; i < i_NP; i++) sortIndex[i] = i;
 
-  /* vars for when i_bs_flag == 1 */
-  int i_len, done, step, bound;
-  double tempC;
+    /* vars for when i_bs_flag == 1 */
+    int i_len, done, step, bound;
+    double tempC;
 
-  GetRNGstate();
+    GetRNGstate();
 
-  gta_popP[0][0] = 0;
- 
-  /* initialize initial popuplation */
-  for (int i = 0; i < i_NP; i++) {
-    for (int j = 0; j < i_D; j++) {
-      initialpop[i][j] = 0.0;
+    gta_popP[0][0] = 0;
+    
+    /* initialize initial popuplation */
+    for (int i = 0; i < i_NP; i++) {
+	for (int j = 0; j < i_D; j++) {
+	    //initialpop[i][j] = 0.0;
+	    initialpop.at(i,j) = 0.0;
+	}
     }
-  }
 
   /* initialize best members */
   for (int i = 0; i < i_itermax * i_D; i++)
@@ -284,8 +209,9 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     
     for (j = 0; j < i_D; j++) {
       for (i = 0; i < i_NP; i++) {
-        initialpop[i][j] = initialpopv[k];
-        k += 1;
+	  //initialpop[i][j] = initialpopv[k];
+          initialpop.at(i,j) = initialpopv[k];
+	  k += 1;
       }
     }
   }
@@ -302,7 +228,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
       }
       else /* or user-specified initial member */
-        gta_popP[i][j] = initialpop[i][j];
+	  //gta_popP[i][j] = initialpop[i][j];
+	  gta_popP[i][j] = initialpop.at(i,j);
     } 
     gta_popC[i] = evaluate(l_nfeval, gta_popP[i], par, fcall, rho);
 
@@ -356,11 +283,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
       /*---DE/current-to-p-best/1 -----------------------------------------------------*/
       if (i_strategy == 6) {
         /* create a copy of gta_oldC to avoid changing it */
-        double temp_oldC[i_NP];
+          Rcpp::NumericVector temp_oldC(i_NP); // double temp_oldC[i_NP];
         for(j = 0; j < i_NP; j++) temp_oldC[j] = gta_oldC[j];
         
         /* sort temp_oldC to use sortIndex later */
-        rsort_with_index( (double*)temp_oldC, (int*)sortIndex, i_NP );
+        rsort_with_index( temp_oldC.begin(), sortIndex.begin(), i_NP );
       }
 
       /*----start of loop through ensemble------------------------*/
@@ -371,7 +298,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	  t_tmpP[j] = gta_oldP[i][j];
 	t_tmpC = gta_oldC[i];
 
-	permute(ia_urn2, URN_DEPTH, i_NP, i); /* Pick 4 random and distinct */
+	permute(ia_urn2, urn_depth, i_NP, i, ia_urntmp.begin()); /* Pick 4 random and distinct */
 
 	i_r1 = ia_urn2[1];  /* population members */
 	i_r2 = ia_urn2[2];
@@ -648,11 +575,9 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
   *gi_iter = i_iter;
 
   PutRNGstate();
-  UNPROTECT(1);
-
 }
 
-void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid)
+void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[])
 /********************************************************************
  ** Function       : void permute(int ia_urn2[], int i_urn2_depth)
  ** Author         : Rainer Storn (w/bug fixes contributed by DEoptim users)
@@ -674,27 +599,25 @@ void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid)
  ** Return Value   : -
  *********************************************************************/
 {
-  int  i, k, i_urn1, i_urn2;
-  int ia_urn1[i_NP];
+    int  i, k, i_urn1, i_urn2;
+    // double ia_urn1[i_NP];
   
-  GetRNGstate();
+    GetRNGstate();
 
-  k = i_NP;
-  i_urn1 = 0;
-  i_urn2 = 0;
-  for (i = 0; i < i_NP; i++)
-    ia_urn1[i] = i; /* initialize urn1 */
+    k = i_NP;
+    i_urn1 = 0;
+    i_urn2 = 0;
+    for (i = 0; i < i_NP; i++)
+	ia_urn1[i] = i; /* initialize urn1 */
 
-  i_urn1 = i_avoid;                      /* get rid of the index to be avoided and place it in position 0. */
-  while (k > i_NP - i_urn2_depth)        /* i_urn2_depth is the amount of indices wanted (must be <= NP) */
-    {
-      ia_urn2[i_urn2] = ia_urn1[i_urn1]; /* move it into urn2 */
-      ia_urn1[i_urn1] = ia_urn1[k-1];    /* move highest index to fill gap */
-      k = k - 1;                         /* reduce number of accessible indices */
-      i_urn2 = i_urn2 + 1;               /* next position in urn2 */
-      i_urn1 = (int)(unif_rand() * k);   /* choose a random index */
+    i_urn1 = i_avoid;                      /* get rid of the index to be avoided and place it in position 0. */
+    while (k > i_NP - i_urn2_depth) {       /* i_urn2_depth is the amount of indices wanted (must be <= NP) */
+	ia_urn2[i_urn2] = ia_urn1[i_urn1]; /* move it into urn2 */
+	ia_urn1[i_urn1] = ia_urn1[k-1];    /* move highest index to fill gap */
+	k = k - 1;                         /* reduce number of accessible indices */
+	i_urn2 = i_urn2 + 1;               /* next position in urn2 */
+	i_urn1 = (int)(unif_rand() * k);   /* choose a random index */
     }
 
-  PutRNGstate();
-
+    PutRNGstate();
 }

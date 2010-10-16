@@ -1,5 +1,16 @@
 2010-10-15  Dirk Eddelbuettel  <edd@debian.org>
 
+	* src/de4_0.cpp (permute): temp. urn vector now allocated above and passed
+
+	* src/Makevars: Added, to permit linking against Rcpp
+
+	* src/de4_0.cpp: Converted to C++ from C, added minimal first set of Rcpp
+	* src/get_element.c: Removed as no longer needed with Rcpp
+
+	* benchmark.txt: Added log of results
+
+	* benchmark.r: Added simple benchmark comparison to DEoptim
+
 	* data/xrrData.rda, data.SMI.rda: Removed in this package as unused
 	* man/xrrData.Rd, man/SMI.Rd: Removed in this package as unused
 
