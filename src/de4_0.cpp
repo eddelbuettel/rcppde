@@ -37,21 +37,21 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
 	   /*double **gta_oldP,*/ arma::mat &ta_oldP,
 	   /*double **gta_newP,*/ arma::mat &ta_newP,
 	   double *gt_bestP,
-           double *gta_popC, double *gta_oldC, double *gta_newC, double *gt_bestC,
+           double *gta_popC, double *gta_oldC, double *gta_newC, 
+	   double & t_bestC,	// now passed by reference in C++
            double *t_bestitP, double *t_tmpP, double *tempP,
            double *gd_pop, double *gd_storepop, double *gd_bestmemit, double *gd_bestvalit,
-           int *gi_iter, double i_pPct, long *l_nfeval);
+           int *gi_iter, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 extern "C" double evaluate(long *l_nfeval, double *param, SEXP par, SEXP fcall, SEXP env);
 
-RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fnSexp, SEXP controlSexp, SEXP rhoSexp) {
+RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     BEGIN_RCPP ;
 
-    Rcpp::Function fn(fnSexp);						// function to mininise
-    Rcpp::Environment rho(rhoSexp); 					// environment to do it in
-
-    Rcpp::NumericVector f_lower(lower), f_upper(upper); 		// User-defined bounds
-    Rcpp::List          control(controlSexp); 				// named list of params
+    Rcpp::Function fn(fnS);						// function to mininise
+    Rcpp::Environment rho(rhoS); 					// environment to do it in
+    Rcpp::NumericVector f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
+    Rcpp::List          control(controlS); 				// named list of params
 
     double VTR           = Rcpp::as<double>(control["VTR"]);		// value to reach
     int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
@@ -74,14 +74,12 @@ RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fnSexp, SEXP controlSexp, 
     arma::mat ta_popP(i_NP*2, i_D);    					// Data structures for parameter vectors 
     arma::mat ta_oldP(i_NP,   i_D);
     arma::mat ta_newP(i_NP,   i_D);
-  
-    Rcpp::NumericVector t_bestP(i_D); 		// double *t_bestP = (double *)R_alloc(1,sizeof(double) * i_D);
+    arma::colvec t_bestP(i_D); 						// double *t_bestP = (double *)R_alloc(1,sizeof(double) * i_D);
 
-    /* Data structures for objective function values associated with parameter vectors */
-    double *gta_popC = (double *)R_alloc(i_NP*2,sizeof(double));
-    double *gta_oldC = (double *)R_alloc(i_NP,sizeof(double));
-    double *gta_newC = (double *)R_alloc(i_NP,sizeof(double));
-    double t_bestC; 	//  = (double *)R_alloc(1,sizeof(double));       
+    arma::colvec ta_popC(i_NP*2);  //double *gta_popC = (double *)R_alloc(i_NP*2,sizeof(double));    	// Data structures for obj. fun. values associated with par. vectors 
+    arma::colvec ta_oldC(i_NP);    //double *gta_oldC = (double *)R_alloc(i_NP,sizeof(double));
+    arma::colvec ta_newC(i_NP);    //double *gta_newC = (double *)R_alloc(i_NP,sizeof(double));
+    double t_bestC; 		   //  = (double *)R_alloc(1,sizeof(double));       
 
     Rcpp::NumericVector t_bestitP(i_D);			// double *t_bestitP = (double *)R_alloc(1,sizeof(double) * i_D);
     Rcpp::NumericVector t_tmpP(i_D); 			// double *t_tmpP = (double *)R_alloc(1,sizeof(double) * i_D);
@@ -99,14 +97,14 @@ RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fnSexp, SEXP controlSexp, 
 	  i_strategy, i_D, i_NP, i_itermax,
 	  initialpopv.begin(), i_storepopfrom, i_storepopfreq, 
 	  i_specinitialpop, i_check_winner, i_av_winner,
-	  ta_popP, ta_oldP, ta_newP, t_bestP.begin(),
-	  gta_popC, gta_oldC, gta_newC, &t_bestC,
+	  ta_popP, ta_oldP, ta_newP, t_bestP.memptr(),
+	  ta_popC.memptr(), ta_oldC.memptr(), ta_newC.memptr(), t_bestC,
 	  t_bestitP.begin(), t_tmpP.begin(), tempP.begin(),
 	  d_pop.begin(), d_storepop.begin(), d_bestmemit.begin(), d_bestvalit.begin(),
-	  &i_iter, i_pPct, &l_nfeval);
+	  &i_iter, i_pPct, l_nfeval);
     /*---end optimization----------------------------------*/
 
-    return Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,       // sexp_bestmem,
+    return Rcpp::List::create(Rcpp::Named("bestmem")   = Rcpp::wrap(t_bestP),       // sexp_bestmem,
 			      Rcpp::Named("bestval")   = t_bestC,       // sexp_bestval,
 			      Rcpp::Named("nfeval")    = l_nfeval,   	// sexp_nfeval,
 			      Rcpp::Named("iter")      = i_iter,	// sexp_iter,
@@ -127,10 +125,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	   /*double **gta_oldP*/ arma::mat &ta_oldP, 
 	   /*double **gta_newP*/ arma::mat &ta_newP, 
 	   double *gt_bestP,
-           double *gta_popC, double *gta_oldC, double *gta_newC, double *gt_bestC,
+           double *gta_popC, double *gta_oldC, double *gta_newC, 
+	   double & t_bestC,
            double *t_bestitP, double *t_tmpP, double *tempP,
            double *gd_pop, double *gd_storepop, double *gd_bestmemit, double *gd_bestvalit,
-           int *gi_iter, double i_pPct, long *l_nfeval)
+           int *gi_iter, double i_pPct, long & l_nfeval)
 {
 
     const int urn_depth = 5;   		// 4 + one index to avoid 
@@ -211,9 +210,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
       }
     }
   }
-  /* number of function evaluations
-   * (this is an input via DEoptim.control, but we over-write it?) */
-  *l_nfeval = 0;
+  /* number of function evaluations (this is an input via DEoptim.control, but we over-write it?) */
+  l_nfeval = 0;
 
   /*------Initialization-----------------------------*/
   for (i = 0; i < i_NP; i++) {
@@ -227,10 +225,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	  ta_popP.at(i,j) = initialpop.at(i,j);
     } 
     arma::rowvec r = ta_popP.row(i);
-    gta_popC[i] = evaluate(l_nfeval, r.memptr(), par, fcall, rho);
+    gta_popC[i] = evaluate(&l_nfeval, r.memptr(), par, fcall, rho);
 
-    if (i == 0 || gta_popC[i] <= gt_bestC[0]) {
-      gt_bestC[0] = gta_popC[i];
+    if (i == 0 || gta_popC[i] <= t_bestC) {
+      t_bestC = gta_popC[i];
       for (j = 0; j < i_D; j++)  
 	  gt_bestP[j] = ta_popP.at(i,j);
     }
@@ -247,7 +245,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
   i_xav = 1;
   
   /* loop */
-  while ((i_iter < i_itermax) && (gt_bestC[0] > VTR))
+  while ((i_iter < i_itermax) && (t_bestC > VTR))
     {
       /* store intermediate populations */
       if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {
@@ -265,11 +263,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	bestacnt++;
       }
       /* store the best value */
-      gd_bestvalit[i_iter] = gt_bestC[0];
+      gd_bestvalit[i_iter] = t_bestC;
       
       for (j = 0; j < i_D; j++) 
         t_bestitP[j] = gt_bestP[j];
-      t_bestitC = gt_bestC[0];
+      t_bestitC = t_bestC;
       
       i_iter++;
      
@@ -432,7 +430,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	/*------Trial mutation now in t_tmpP-----------------*/
 	/* Evaluate mutant in t_tmpP[]*/
 
-	t_tmpC = evaluate(l_nfeval, t_tmpP, par, fcall, rho); 
+	t_tmpC = evaluate(&l_nfeval, t_tmpP, par, fcall, rho); 
 	
 	/* note that i_bs_flag means that we will choose the
 	 *best NP vectors from the old and new population later*/
@@ -441,10 +439,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    for (j = 0; j < i_D; j++) 
 		ta_newP.at(i,j) = t_tmpP[j];
 	    gta_newC[i] = t_tmpC;
-	    if (t_tmpC <= gt_bestC[0]) {
+	    if (t_tmpC <= t_bestC) {
 		for (j = 0; j < i_D; j++) 
 		    gt_bestP[j]=t_tmpP[j];
-		gt_bestC[0]=t_tmpC;
+		t_bestC = t_tmpC;
 	  }
 	} 
 	else {
@@ -518,14 +516,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	if(same && i_iter > 1)  {
 	  i_xav++;
 	  /* if re-evaluation of winner */
-	  tmp_best = evaluate(l_nfeval, gt_bestP, par, fcall, rho);
+	  tmp_best = evaluate(&l_nfeval, gt_bestP, par, fcall, rho);
 	 
 	  /* possibly letting the winner be the average of all past generations */
 	  if(i_av_winner)
-	    gt_bestC[0] = ((1/(double)i_xav) * gt_bestC[0]) 
-	      + ((1/(double)i_xav) * tmp_best) + (gd_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
+	    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + (gd_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
 	  else
-	    gt_bestC[0] = tmp_best;
+	    t_bestC = tmp_best;
 	
 	}
 	else {
@@ -535,11 +532,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
       }
       for (j = 0; j < i_D; j++) 
 	t_bestitP[j] = gt_bestP[j];
-      t_bestitC = gt_bestC[0];
+      t_bestitC = t_bestC;
 
       if( trace > 0 ) {
         if( (i_iter % trace) == 0 ) {
-	  Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, gt_bestC[0]);
+	  Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, t_bestC);
 	  for (j = 0; j < i_D; j++)
 	    Rprintf("%12.6f", gt_bestP[j]);
 	  Rprintf("\n");
