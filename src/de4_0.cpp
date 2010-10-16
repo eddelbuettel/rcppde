@@ -185,19 +185,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 	} /* end store pop */
       
-	//for(j = 0; j < i_D; j++) {			// store the best member -- could also be a matrix of itermax * i_D
-	//    d_bestmemit[bestacnt] = t_bestP[j];
-	//    bestacnt++;
-	//}
 	d_bestmemit.row(i_iter) = t_bestP;	// store the best member
-
 	d_bestvalit[i_iter] = t_bestC;		// store the best value 
-	
-	//for (j = 0; j < i_D; j++) t_bestitP[j] = t_bestP[j];
 	t_bestitP = t_bestP;
 	t_bestitC = t_bestC;
-      
-	i_iter++;
+	i_iter++;				// increase iteration counter
      
 	f_dither = f_weight + unif_rand() * (1.0 - f_weight);	// ----computer dithering factor -----------------
       
@@ -217,139 +209,111 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    i_r3 = ia_urn2[3];
 	    i_r4 = ia_urn2[4];
 		
-	    /*===Choice of strategy=======================================================*/
-	    /*---classical strategy DE/rand/1/bin-----------------------------------------*/
-	    if (i_strategy == 1) {
+	    // ===Choice of strategy=======================================================
+	    if (i_strategy == 1) { 		// ---classical strategy DE/rand/1/bin-----------------------------------------
 	  
-		j = (int)(unif_rand() * i_D); /* random parameter */
+		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
 		    /* add fluctuation to random target */
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
-		    
 		    j = (j + 1) % i_D;
 		    k++;
-		}while((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (k < i_D));
 
-	    }
-	    /*---DE/local-to-best/1/bin---------------------------------------------------*/
-	    else if (i_strategy == 2) {
+	    } else if (i_strategy == 2) {	// ---DE/local-to-best/1/bin---------------------------------------------------
 	 
-		j = (int)(unif_rand() * i_D); /* random parameter */
+		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
 		    /* add fluctuation to random target */
-		    
 		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
 		    k++;
-		} while((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (k < i_D));
 
-	    }
-	    /*---DE/best/1/bin with jitter------------------------------------------------*/
-	    else if (i_strategy == 3) {
+	    } else if (i_strategy == 3) {	// ---DE/best/1/bin with jitter------------------------------------------------
 	 	  
-		j = (int)(unif_rand() * i_D); /* random parameter */
+		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
-		    /* add fluctuation to random target */
-		    f_jitter = 0.0001 * unif_rand() + f_weight;
+		    f_jitter = 0.0001 * unif_rand() + f_weight; // add fluctuation to random target 
 		    t_tmpP[j] = t_bestitP[j] + f_jitter * (ta_oldP.at(i_r1,j) - ta_oldP.at(i_r2,j));
-	    
 		    j = (j + 1) % i_D;
 		    k++;
-		} while((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (k < i_D));
 
-	    }
-	    /*---DE/rand/1/bin with per-vector-dither-------------------------------------*/
-	    else if (i_strategy == 4) {
+	    } else if (i_strategy == 4) {	// ---DE/rand/1/bin with per-vector-dither-------------------------------------
 		  
-		j = (int)(unif_rand() * i_D); /* random parameter */
+		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
-		    /* add fluctuation to random target */
+		    // add fluctuation to random target *
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + (f_weight + unif_rand()*(1.0 - f_weight))* (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
-		    
 		    j = (j + 1) % i_D;
 		    k++;
-		} while((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (k < i_D));
 
-	    }
-	    /*---DE/rand/1/bin with per-generation-dither---------------------------------*/
-	    else if (i_strategy == 5) {
+	    } else if (i_strategy == 5) {	// ---DE/rand/1/bin with per-generation-dither---------------------------------
 	  
 		j = (int)(unif_rand() * i_D); /* random parameter */
 		k = 0;
 		do {
-		    /* add fluctuation to random target */
+		    // add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_dither * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 	    
 		    j = (j + 1) % i_D;
 		    k++;
-		} while((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (k < i_D));
        
-	    }
-	    /*---DE/current-to-p-best/1 (JADE)--------------------------------------------*/
-	    else if (i_strategy == 6) {
+	    } else if (i_strategy == 6) {	// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
 
-		/* select from [0, 1, 2, ..., (pNP-1)] */
-		i_pbest = sortIndex[(int)(unif_rand() * p_NP)];
-		
-		j = (int)(unif_rand() * i_D); /* random parameter */
+		i_pbest = sortIndex[(int)(unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
+		j = (int)(unif_rand() * i_D); 			// random parameter 
 		k = 0;
 		do {
-		    /* add fluctuation to random target */
+		    // add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i,j) + f_weight * (ta_oldP.at(i_pbest,j) - ta_oldP.at(i,j)) + f_weight * (ta_oldP.at(i_r1,j) - ta_oldP.at(i_r2,j));
-	    
 		    j = (j + 1) % i_D;
 		    k++;
-		}while((unif_rand() < f_cross) && (k < i_D));
+		} while((unif_rand() < f_cross) && (k < i_D));
 
-	    }
-	    /*---variation to DE/rand/1/bin: either-or-algorithm--------------------------*/
-	    else {
+	    } else {				// ---variation to DE/rand/1/bin: either-or-algorithm--------------------------
 	  
-		j = (int)(unif_rand() * i_D); /* random parameter */
+		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
-		if (unif_rand() < 0.5) { /* differential mutation, Pmu = 0.5 */
+		if (unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
 		    do {
 			/* add fluctuation to random target */
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
-			
 			j = (j + 1) % i_D;
 			k++;
-		    }while((unif_rand() < f_cross) && (k < i_D));
-		}
-		else {
-		    /* recombination with K = 0.5*(F+1) -. F-K-Rule */
+		    } while((unif_rand() < f_cross) && (k < i_D));
+
+		} else { 			// recombination with K = 0.5*(F+1) -. F-K-Rule 
 		    do {
 			/* add fluctuation to random target */
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + 0.5 * (f_weight + 1.0) * (ta_oldP.at(i_r2,j) + ta_oldP.at(i_r3,j) - 2 * ta_oldP.at(i_r1,j));
-			
 			j = (j + 1) % i_D;
 			k++;
-		    }while((unif_rand() < f_cross) && (k < i_D));
-
+		    } while((unif_rand() < f_cross) && (k < i_D));
 		}
-	    }/* end if (i_strategy ...*/
+	    } // end if (i_strategy ...
 	
-	    /*----boundary constraints, bounce-back method was not enforcing bounds correctly*/
+	    // ----boundary constraints, bounce-back method was not enforcing bounds correctly
 	    for (j = 0; j < i_D; j++) {
 		if (t_tmpP[j] < fa_minbound[j]) {
-		    t_tmpP[j] = fa_minbound[j] +
-			unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
+		    t_tmpP[j] = fa_minbound[j] + unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 		}
 		if (t_tmpP[j] > fa_maxbound[j]) {
-		    t_tmpP[j] =  fa_maxbound[j] -
-			unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
+		    t_tmpP[j] = fa_maxbound[j] - unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 		}
 	    }
 
-	    /*------Trial mutation now in t_tmpP-----------------*/
+	    // ------Trial mutation now in t_tmpP-----------------
 	    t_tmpC = evaluate(l_nfeval, t_tmpP, par, fcall, rho); 	    // Evaluate mutant in t_tmpP[]
 
-	    /* note that i_bs_flag means that we will choose the
-	     *best NP vectors from the old and new population later*/
+	    // note that i_bs_flag means that we will choose the best NP vectors from the old and new population later
 	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {
 		/* replace target with mutant */
 		for (j = 0; j < i_D; j++) 
