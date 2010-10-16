@@ -96,7 +96,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::rowvec & fa_minbound, arma::rowvec & fa_maxbound, SEXP fcall, SEXP rho, int i_trace,
            int i_strategy, int i_D, int i_NP, int i_itermax,
-           arma::mat & initialpop, int i_storepopfrom, int i_storepopfreq, 
+           arma::mat & initialpopm, int i_storepopfrom, int i_storepopfreq, 
            int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, 
 	   arma::rowvec & t_bestP, arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, 
@@ -116,6 +116,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     int i_xav, popcnt, bestacnt, same; 		// lazy cnters 
     double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best, tempC; 
     
+    arma::mat initialpop(i_NP, i_D); 
+
     int i_pbest;    				// vars for DE/current-to-p-best/1 
     int p_NP = round(i_pPct * i_NP);  		// choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
