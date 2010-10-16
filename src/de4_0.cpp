@@ -114,7 +114,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     int i_xav, popcnt, bestacnt, same; 		// lazy cnters 
-    double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best, tempC; 
+    double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best; 
     
     arma::mat initialpop(i_NP, i_D); 
 
@@ -125,11 +125,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     for(i = 0; i < i_NP; i++) sortIndex[i] = i;
 
     int i_len, done, step, bound;    		// vars for when i_bs_flag == 1 */
+    double tempC;
 
     GetRNGstate();
 
     ta_popP.at(0,0) = 0;
     
+    initialpop.zeros();		 		// initialize initial popuplation 
     d_bestmemit.zeros();    			// initialize best members
     d_bestvalit.zeros();			// initialize best values 
     d_pop.zeros();				// initialize best population
@@ -137,9 +139,14 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     i_nstorepop = (i_nstorepop < 0) ? 0 : i_nstorepop;
       
     if (i_specinitialpop > 0) {    		// if initial population provided, initialize with values 
-	initialpop = initialpopm;
+	k = 0;
+	for (j = 0; j < i_D; j++) { 		// FIXME: should really have a matrix passed in ! 
+	    for (i = 0; i < i_NP; i++) {
+		initialpop.at(i,j) = initialpopm[k];
+		k += 1;
+	    }
+	}
     }
-
     l_nfeval = 0;    				// number of function evaluations (this is an input via DEoptim.control, but we over-write it?) 
 
     for (i = 0; i < i_NP; i++) {		// ------Initialization-----------------------------
@@ -147,7 +154,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    for (j = 0; j < i_D; j++) {
 		ta_popP.at(i,j) = fa_minbound[j] + unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 	    }
-	} else { 				// or user-specified initial member */
+	} else { /* or user-specified initial member */
 	    ta_popP.row(i) = initialpop.row(i);
 	} 
 	ta_popC[i] = evaluate(l_nfeval, ta_popP.row(i), par, fcall, rho);
@@ -173,7 +180,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		    popcnt++;
 		}
 	    }
-	} // end store pop 
+	} /* end store pop */
       
 	d_bestmemit.row(i_iter) = t_bestP;	// store the best member
 	d_bestvalit[i_iter] = t_bestC;		// store the best value 
@@ -205,7 +212,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
-		    // add fluctuation to random target 
+		    /* add fluctuation to random target */
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
 		    k++;
@@ -216,7 +223,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		j = (int)(unif_rand() * i_D); 	// random parameter 
 		k = 0;
 		do {
-		    // add fluctuation to random target 
+		    /* add fluctuation to random target */
 		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
 		    k++;
@@ -274,7 +281,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		k = 0;
 		if (unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
 		    do {
-			// add fluctuation to random target 
+			// add fluctuation to random target */
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 			j = (j + 1) % i_D;
 			k++;
@@ -282,7 +289,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 		} else { 			// recombination with K = 0.5*(F+1) -. F-K-Rule 
 		    do {
-			// add fluctuation to random target 
+			// add fluctuation to random target */
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + 0.5 * (f_weight + 1.0) * (ta_oldP.at(i_r2,j) + ta_oldP.at(i_r3,j) - 2 * ta_oldP.at(i_r1,j));
 			j = (j + 1) % i_D;
 			k++;
@@ -321,6 +328,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    
 	    ta_popP.rows(0, i_NP-1) = ta_oldP;
 	    ta_popC.rows(0, i_NP-1) = ta_oldC;
+
 	    ta_popP.rows(i_NP, 2*i_NP-1) = ta_newP;
 	    ta_popC.rows(i_NP, 2*i_NP-1) = ta_newC;
 
@@ -341,19 +349,18 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 			    ta_popP.row(j) = tempP;
 			    ta_popC[j] = tempC;
 			    done = 0; 
-			    // if a swap has been made we are not finished yet 
 			}  // if 
 		    }  // for 
 		} while (!done);   // do .. while 
 	    } // while (step > 1) 
-	    ta_newP = ta_popP;		// now the best NP are in first NP places in gta_pop, use them 
+	    ta_newP = ta_popP;			// now the best NP are in first NP places in gta_pop, use them
 	    ta_newC = ta_popC;
 	} // i_bs_flag
 
-	ta_oldP = ta_newP;		// have selected NP mutants move on to next generation 
+	ta_oldP = ta_newP;			// have selected NP mutants move on to next generation 
 	ta_oldC = ta_newC;
 
-	if (i_check_winner)  {		// check if the best stayed the same, if necessary 
+	if (i_check_winner)  {			// check if the best stayed the same, if necessary 
 	    same = 1;
 	    for (j = 0; j < i_D; j++)
 		if (t_bestitP[j] != t_bestP[j]) {
@@ -363,7 +370,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		i_xav++;
 		tmp_best = evaluate(l_nfeval, t_bestP, par, fcall, rho);			// if re-evaluation of winner 
 		
-		if (i_av_winner)			//  possibly letting the winner be the average of all past generations 
+		if (i_av_winner)		//  possibly letting the winner be the average of all past generations 
 		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
 		else
 		    t_bestC = tmp_best;
@@ -421,7 +428,7 @@ inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int 
 	ia_urn1[i] = i; /* initialize urn1 */
 
     i_urn1 = i_avoid;                      /* get rid of the index to be avoided and place it in position 0. */
-    while (k > i_NP - i_urn2_depth) {       /* i_urn2_depth is the amount of indices wanted (must be <= NP) */
+    while (k > i_NP - i_urn2_depth) {      /* i_urn2_depth is the amount of indices wanted (must be <= NP) */
 	ia_urn2[i_urn2] = ia_urn1[i_urn1]; /* move it into urn2 */
 	ia_urn1[i_urn1] = ia_urn1[k-1];    /* move highest index to fill gap */
 	k = k - 1;                         /* reduce number of accessible indices */

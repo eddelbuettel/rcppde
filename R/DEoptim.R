@@ -87,12 +87,11 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
   }
   else {
     ctrl$specinitialpop <- FALSE
-    ctrl$initialpop <- 0.0
+    ctrl$initialpop <- matrix(0,1,1)    # dummy matrix
   }
   ##
   ctrl$trace <- as.numeric(ctrl$trace)
   ctrl$specinitialpop <- as.numeric(ctrl$specinitialpop)
-  #ctrl$initialpop <- as.numeric(ctrl$initialpop)
 
   outC <- .Call("DEoptimC", lower, upper, fn1, ctrl, new.env(), PACKAGE = "RcppDE")
   ##
