@@ -18,7 +18,7 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::rowvec & t_bestP, 
 	   arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, double       & t_bestC,	
            arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
-           arma::rowvec & d_pop, arma::rowvec & d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
+           arma::mat & d_pop, arma::rowvec & d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
@@ -69,7 +69,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
     arma::rowvec tempP(i_D);
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
-    arma::rowvec d_pop(i_NP*i_D); 
+    arma::mat d_pop(i_NP, i_D); 
     arma::rowvec d_storepop(i_NP*i_D*i_nstorepop); 
     arma::mat d_bestmemit(i_itermax, i_D);       
     arma::rowvec d_bestvalit(i_itermax); 	 
@@ -103,7 +103,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	   arma::rowvec & t_bestP, arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, 
 	   double & t_bestC,
            arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
-           arma::rowvec &d_pop, arma::rowvec &d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
+           arma::mat &d_pop, arma::rowvec &d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
     const int urn_depth = 5;   			// 4 + one index to avoid 
@@ -424,16 +424,16 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		Rprintf("\n");
 	    }
 	}
-    } /* end loop through generations */
+    } // end loop through generations 
     
-    /* last population */
-    k = 0;
-    for (i = 0; i < i_NP; i++) {
-	for (j = 0; j < i_D; j++) {
-	    d_pop[k] = ta_oldP.at(i,j);      
-	    k++;
-	}
-    }
+    // k = 0;	    // last population 
+    // for (i = 0; i < i_NP; i++) {
+    // 	for (j = 0; j < i_D; j++) {
+    // 	    d_pop[k] = ta_oldP.at(i,j);      
+    // 	    k++;
+    // 	}
+    // }
+    d_pop = ta_oldP;
     i_iterations = i_iter;
 
     PutRNGstate();

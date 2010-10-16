@@ -126,8 +126,8 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
 
   dimnames(bestmemit) <- list(1:iter, nam)
   bestvalit <- as.numeric(outC$bestvalit[1:iter])
-  pop <- matrix(outC$pop, nrow = ctrl$NP, ncol = ctrl$npar,
-                byrow = TRUE)
+  #pop <- matrix(outC$pop, nrow = ctrl$NP, ncol = ctrl$npar, byrow = TRUE)
+  pop <- outC$pop
   storepop <- as.list(storepop)
 
   outR <- list(optim = list(
