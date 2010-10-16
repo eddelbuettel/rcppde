@@ -134,6 +134,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     d_storepop.zeros();				// initialize stored populations 
     i_nstorepop = (i_nstorepop < 0) ? 0 : i_nstorepop;
       
+    if (i_specinitialpop > 0) {    		// if initial population provided, initialize with values 
+	initialpop = initialpopm;
+    }
+
     l_nfeval = 0;    				// number of function evaluations (this is an input via DEoptim.control, but we over-write it?) 
 
     for (i = 0; i < i_NP; i++) {		// ------Initialization-----------------------------
