@@ -38,7 +38,8 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            double *gta_popC, double *gta_oldC, double *gta_newC, 
 	   double & t_bestC,	// now passed by reference in C++
            double *t_bestitP, double *t_tmpP, double *tempP,
-           double *gd_pop, double *gd_storepop, double *gd_bestmemit, double *gd_bestvalit,
+           arma::colvec & d_pop, arma::colvec & d_storepop, 
+	   arma::colvec & d_bestmemit, arma::colvec & d_bestvalit,
            int *gi_iter, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 RcppExport double evaluate(long &l_nfeval, double *param, SEXP par, SEXP fcall, SEXP env);
@@ -84,10 +85,10 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
     arma::colvec tempP(i_D);
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
-    Rcpp::NumericVector d_pop(i_NP*i_D); 
-    Rcpp::NumericVector d_storepop(i_NP*i_D*i_nstorepop); 
-    Rcpp::NumericVector d_bestmemit(i_itermax*i_D);       
-    Rcpp::NumericVector d_bestvalit(i_itermax); 	 
+    arma::colvec d_pop(i_NP*i_D); 
+    arma::colvec d_storepop(i_NP*i_D*i_nstorepop); 
+    arma::colvec d_bestmemit(i_itermax*i_D);       
+    arma::colvec d_bestvalit(i_itermax); 	 
     int i_iter = 0;
 
     /*---optimization--------------------------------------*/
@@ -98,23 +99,23 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 	  ta_popP, ta_oldP, ta_newP, t_bestP.memptr(),
 	  ta_popC.memptr(), ta_oldC.memptr(), ta_newC.memptr(), t_bestC,
 	  t_bestitP.memptr(), t_tmpP.memptr(), tempP.memptr(),
-	  d_pop.begin(), d_storepop.begin(), d_bestmemit.begin(), d_bestvalit.begin(),
+	  d_pop, d_storepop, d_bestmemit, d_bestvalit,
 	  &i_iter, i_pPct, l_nfeval);
     /*---end optimization----------------------------------*/
 
-    return Rcpp::List::create(Rcpp::Named("bestmem")   = Rcpp::wrap(t_bestP),       // sexp_bestmem,
+    return Rcpp::List::create(Rcpp::Named("bestmem")   = Rcpp::wrap(t_bestP),		// sexp_bestmem,
 			      Rcpp::Named("bestval")   = t_bestC,       // sexp_bestval,
 			      Rcpp::Named("nfeval")    = l_nfeval,   	// sexp_nfeval,
 			      Rcpp::Named("iter")      = i_iter,	// sexp_iter,
-			      Rcpp::Named("bestmemit") = d_bestmemit,   // sexp_bestmemit,
-			      Rcpp::Named("bestvalit") = d_bestvalit,	// sexp_bestvalit,
-			      Rcpp::Named("pop")       = d_pop,         // sexp_pop,
-			      Rcpp::Named("storepop")  = d_storepop);   // sexp_storepop)
+			      Rcpp::Named("bestmemit") = Rcpp::wrap(d_bestmemit), 	// sexp_bestmemit,
+			      Rcpp::Named("bestvalit") = Rcpp::wrap(d_bestvalit),	// sexp_bestvalit,
+			      Rcpp::Named("pop")       = Rcpp::wrap(d_pop),    		// sexp_pop,
+			      Rcpp::Named("storepop")  = Rcpp::wrap(d_storepop));   	// sexp_storepop)
     END_RCPP
 }
 
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
-           double *lower, double *upper, SEXP fcall, SEXP rho, int trace, 
+           double *fa_minbound, double *fa_maxbound, SEXP fcall, SEXP rho, int trace, 
            int i_strategy, int i_D, int i_NP, int i_itermax,
            double *initialpopv, int i_storepopfrom, int i_storepopfreq, 
            int i_specinitialpop, int i_check_winner, int i_av_winner,
@@ -123,100 +124,63 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            double *gta_popC, double *gta_oldC, double *gta_newC, 
 	   double & t_bestC,
            double *t_bestitP, double *t_tmpP, double *tempP,
-           double *gd_pop, double *gd_storepop, double *gd_bestmemit, double *gd_bestvalit,
-           int *gi_iter, double i_pPct, long & l_nfeval)
-{
+           arma::colvec &d_pop, arma::colvec &d_storepop, arma::colvec & d_bestmemit, arma::colvec & d_bestvalit,
+           int *gi_iter, double i_pPct, long & l_nfeval) {
 
-    const int urn_depth = 5;   		// 4 + one index to avoid 
-
-    Rcpp::NumericVector par(i_D);  	// initialize parameter vector to pass to evaluate function 
-  
-    int i, j, k;  /* counting variables */
-    int i_r1, i_r2, i_r3, i_r4;  /* placeholders for random indexes */
+    const int urn_depth = 5;   			// 4 + one index to avoid 
+    Rcpp::NumericVector par(i_D);  		// initialize parameter vector to pass to evaluate function 
+    int i, j, k, i_r1, i_r2, i_r3, i_r4;  	// counting variables and placeholders for random indexes
     
     int ia_urn2[urn_depth];
-    Rcpp::IntegerVector ia_urntmp(i_NP);
+    Rcpp::IntegerVector ia_urntmp(i_NP); 	// so that we don't need to re-allocated each time in permute
 
     int i_nstorepop, i_xav;
     i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
   
     int popcnt, bestacnt, same; /* lazy cnters */
     
-    double *fa_minbound = lower;
-    double *fa_maxbound = upper;
-    double f_jitter, f_dither;
+    double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best; 
     
-    double t_bestitC;
-    double t_tmpC, tmp_best; 
-    
-    arma::mat initialpop(i_NP, i_D);   // double initialpop[i_NP][i_D];
+    arma::mat initialpop(i_NP, i_D); 
 
-    /* vars for DE/current-to-p-best/1 */
-    int i_pbest;
-    int p_NP = round(i_pPct * i_NP);  /* choose at least two best solutions */
+    int i_pbest;    				// vars for DE/current-to-p-best/1 
+
+    int p_NP = round(i_pPct * i_NP);  		// choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
-    arma::icolvec sortIndex(i_NP); //  int sortIndex[i_NP];              /* sorted values of gta_oldC */
+    arma::icolvec sortIndex(i_NP); 		// sorted values of gta_oldC 
     for(i = 0; i < i_NP; i++) sortIndex[i] = i;
 
-    /* vars for when i_bs_flag == 1 */
-    int i_len, done, step, bound;
+    int i_len, done, step, bound;    		// vars for when i_bs_flag == 1 */
     double tempC;
 
     GetRNGstate();
 
     ta_popP.at(0,0) = 0;
     
-    /* initialize initial popuplation */
-    for (int i = 0; i < i_NP; i++) {
-	for (int j = 0; j < i_D; j++) {
-	    //initialpop[i][j] = 0.0;
-	    initialpop.at(i,j) = 0.0;
-	}
-    }
-
-    /* initialize best members */
-    for (int i = 0; i < i_itermax * i_D; i++)
-	gd_bestmemit[i] = 0.0;
-
-    /* initialize best values */
-    for (int i = 0; i < i_itermax; i++)
-	gd_bestvalit[i] = 0.0;
-
-    /* initialize best population */
-    for (int i = 0; i < i_NP * i_D; i++)
-	gd_pop[i] = 0.0;
-
-    /* initialize stored populations */
-    if (i_nstorepop < 0)
-	i_nstorepop = 0;
-
-    for (int i = 0; i < (i_nstorepop * i_NP * i_D); i++)
-	gd_storepop[i] = 0.0;
+    initialpop.zeros();		 		// initialize initial popuplation 
+    d_bestmemit.zeros();    			// initialize best members
+    d_bestvalit.zeros();			// initialize best values 
+    d_pop.zeros();				// initialize best population
+    d_storepop.zeros();				// initialize stored populations 
+    i_nstorepop = (i_nstorepop < 0) ? 0 : i_nstorepop;
       
-    /* if initial population provided, initialize with values */
-    if (i_specinitialpop > 0) {
+    if (i_specinitialpop > 0) {    		// if initial population provided, initialize with values 
 	k = 0;
-    
-	for (j = 0; j < i_D; j++) {
+	for (j = 0; j < i_D; j++) { 		// FIXME: should really have a matrix passed in ! 
 	    for (i = 0; i < i_NP; i++) {
-		//initialpop[i][j] = initialpopv[k];
 		initialpop.at(i,j) = initialpopv[k];
 		k += 1;
 	    }
 	}
     }
-    /* number of function evaluations (this is an input via DEoptim.control, but we over-write it?) */
-    l_nfeval = 0;
+    l_nfeval = 0;    				// number of function evaluations (this is an input via DEoptim.control, but we over-write it?) 
 
     /*------Initialization-----------------------------*/
     for (i = 0; i < i_NP; i++) {
 	for (j = 0; j < i_D; j++) {
-	    if (i_specinitialpop <= 0) { /* random initial member */
+	    if (i_specinitialpop <= 0) { 	// random initial member 
 		ta_popP.at(i,j) = fa_minbound[j] + unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
-
-	    }
-	    else /* or user-specified initial member */
-		//gta_popP[i][j] = initialpop[i][j];
+	    } else /* or user-specified initial member */
 		ta_popP.at(i,j) = initialpop.at(i,j);
 	} 
 	arma::rowvec r = ta_popP.row(i);
@@ -246,7 +210,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {
 		for (i = 0; i < i_NP; i++) {
 		    for (j = 0; j < i_D; j++) {
-			gd_storepop[popcnt] = ta_oldP.at(i,j);
+			d_storepop[popcnt] = ta_oldP.at(i,j);
 			popcnt++;
 		    }
 		}
@@ -254,11 +218,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
       
 	    /* store the best member */
 	    for(j = 0; j < i_D; j++) {
-		gd_bestmemit[bestacnt] = gt_bestP[j];
+		d_bestmemit[bestacnt] = gt_bestP[j];
 		bestacnt++;
 	    }
 	    /* store the best value */
-	    gd_bestvalit[i_iter] = t_bestC;
+	    d_bestvalit[i_iter] = t_bestC;
       
 	    for (j = 0; j < i_D; j++) 
 		t_bestitP[j] = gt_bestP[j];
@@ -514,7 +478,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	 
 		    /* possibly letting the winner be the average of all past generations */
 		    if(i_av_winner)
-			t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + (gd_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
+			t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
 		    else
 			t_bestC = tmp_best;
 	
@@ -542,7 +506,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     k = 0;
     for (i = 0; i < i_NP; i++) {
 	for (j = 0; j < i_D; j++) {
-	    gd_pop[k] = ta_oldP.at(i,j);      
+	    d_pop[k] = ta_oldP.at(i,j);      
 	    k++;
 	}
     }
