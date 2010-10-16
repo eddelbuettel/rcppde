@@ -1,25 +1,21 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; tab-width: 8 -*-
 //
-// Port of DEoptim (2.0.7) to Rcpp/RcppArmadillo/Armadillo
+// Port of DEoptim (2.0.7) by Ardia et al to Rcpp/RcppArmadillo/Armadillo
 // Copyright (C) 2010  Dirk Eddelbuettel <edd@debian.org>
+//
+// DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
 
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 
-/*------objective function---------------------------------------*/
-
-RcppExport double evaluate(long &l_nfeval, double *param, SEXP parS, SEXP fcall, SEXP env) {
-    Rcpp::NumericVector par(parS);
-    memcpy(par.begin(), param, par.size() * sizeof(double));
-
-    l_nfeval++;  		// increment function evaluation count 
-
-    SEXP fn = ::Rf_lang2(fcall, par); 			// this can be done with Rcpp 
+RcppExport double evaluate(long &l_nfeval, const arma::rowvec & param, SEXP parS, SEXP fcall, SEXP env) {
+    Rcpp::NumericVector par(parS); 			// access parS as numeric vector to fill it
+    std::copy(param.begin(), param.end(), par.begin()); // STL way of copying
+    SEXP fn = ::Rf_lang2(fcall, par); 			// this could be done with Rcpp 
     SEXP sexp_fvec = ::Rf_eval(fn, env);		// but is still a lot slower right now
     double f_result = Rcpp::as<double>(sexp_fvec);
-   
     if (ISNAN(f_result)) 
 	::Rf_error("NaN value of objective function! \nPerhaps adjust the bounds.");
-   
+    l_nfeval++;  					// increment function evaluation count 
    return(f_result); 
 }
 
