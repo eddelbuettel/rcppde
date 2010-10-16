@@ -21,8 +21,8 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            arma::rowvec & d_pop, arma::rowvec & d_storepop, arma::rowvec & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
-//RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
-RcppExport double evaluate(long & l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP env);
+RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
+//RcppExport double evaluate(long & l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP env);
 
 RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     BEGIN_RCPP ;	// macro to fill in try part of try/catch exception handler
@@ -158,8 +158,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	} else { /* or user-specified initial member */
 	    ta_popP.row(i) = initialpop.row(i);
 	} 
-	arma::rowvec r = ta_popP.row(i);
-	ta_popC[i] = evaluate(l_nfeval, r.memptr(), par, fcall, rho);
+	ta_popC[i] = evaluate(l_nfeval, ta_popP.row(i), par, fcall, rho);
 	if (i == 0 || ta_popC[i] <= t_bestC) {
 	    t_bestC = ta_popC[i];
 	    //for (j = 0; j < i_D; j++)  
@@ -356,7 +355,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 
 	    /*------Trial mutation now in t_tmpP-----------------*/
-	    t_tmpC = evaluate(l_nfeval, t_tmpP.memptr(), par, fcall, rho); 	    // Evaluate mutant in t_tmpP[]
+	    t_tmpC = evaluate(l_nfeval, t_tmpP, par, fcall, rho); 	    // Evaluate mutant in t_tmpP[]
 
 	    /* note that i_bs_flag means that we will choose the
 	     *best NP vectors from the old and new population later*/
@@ -440,7 +439,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		}
 	    if(same && i_iter > 1)  {
 		i_xav++;
-		tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);			// if re-evaluation of winner 
+		tmp_best = evaluate(l_nfeval, t_bestP, par, fcall, rho);			// if re-evaluation of winner 
 
 		/* possibly letting the winner be the average of all past generations */
 		if(i_av_winner)
