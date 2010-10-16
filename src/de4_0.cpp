@@ -315,26 +315,22 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 	    // note that i_bs_flag means that we will choose the best NP vectors from the old and new population later
 	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {
-		/* replace target with mutant */
-		for (j = 0; j < i_D; j++) 
-		    ta_newP.at(i,j) = t_tmpP[j];
+		//for (j = 0; j < i_D; j++) ta_newP.at(i,j) = t_tmpP[j];
+		ta_newP.row(i) = t_tmpP;				// replace target with mutant 
 		ta_newC[i] = t_tmpC;
 		if (t_tmpC <= t_bestC) {
-		    for (j = 0; j < i_D; j++) 
-			t_bestP[j] = t_tmpP[j];
+		    //for (j = 0; j < i_D; j++) t_bestP[j] = t_tmpP[j];
+		    t_bestP = t_tmpP;
 		    t_bestC = t_tmpC;
 		}
-	    } 
-	    else {
-		for (j = 0; j < i_D; j++) 
-		    ta_newP.at(i,j) = ta_oldP.at(i,j);
+	    } else {
+		//for (j = 0; j < i_D; j++) ta_newP.at(i,j) = ta_oldP.at(i,j);
+		ta_newP.row(i) = ta_oldP.row(i);
 		ta_newC[i] = ta_oldC[i];
-	  
 	    }
-	} /* End mutation loop through pop. */
-	
-     
-	if(i_bs_flag) {
+	} // End mutation loop through pop., ie the "for (i = 0; i < i_NP; i++)"
+
+	if (i_bs_flag) {
 	    /* examine old and new pop. and take the best NP members into next generation */
 	    for (i = 0; i < i_NP; i++) {
 		for (j = 0; j < i_D; j++) 
