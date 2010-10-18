@@ -24,9 +24,9 @@ cppDE <- function(n, maxIt, fun) RcppDE::DEoptim(fn=fun, lower=rep(-25, n), uppe
                                                  control=list(NP=10*n, itermax=maxIt, trace=FALSE))#, bs=TRUE))
 
 set.seed(42)
-valBasic <- basicDE(5, maxIt, fun)
+valBasic <- basicDE(5, maxIt, function(...) Rastrigin(...))
 set.seed(42)
-valCpp <- cppDE(5, maxIt, fun)
+valCpp <- cppDE(5, maxIt, function(...) Rastrigin(...))
 stopifnot( all.equal(valBasic, valCpp) )
 
 runPair <- function(n, maxIt, fun) {
