@@ -33,14 +33,17 @@ runPair <- function(n, maxIt, fun) {
 
     gc()
     set.seed(42)
-    bt <- mean(replicate(20, system.time(invisible(basicDE(n, maxIt, fun)))[3]), trim=0.05)
+    bt <- mean(replicate(10, system.time(invisible(basicDE(n, maxIt, fun)))[3]), trim=0.1)
 
     gc()
     set.seed(42)
-    ct <- mean(replicate(20, system.time(invisible(cppDE(n, maxIt, fun)))[3]), trim=0.05)
+    ct <- mean(replicate(10, system.time(invisible(cppDE(n, maxIt, fun)))[3]), trim=0.1)
 
     return(data.frame(DEoptim=bt, RcppDE=ct))
 }
+
+svnver <- system("svnversion", intern=TRUE)
+cat("# At ", format(Sys.time()), "\n# SVN ", svnver, "\n")
 
 res <- rbind(runPair(2, maxIt, function(...) Rastrigin(...)),
              runPair(5, maxIt, function(...) Rastrigin(...)),
@@ -62,6 +65,5 @@ rownames(res) <- c("Rastrigin2", "Rastrigin5", "Rastrigin20",
 res$ratioRcppToBasic <- res[,2]/res[,1]
 res$pctGainOfRcpp <- (1-res[,2]/res[,1])*100
 
-svnver <- system("svnversion", intern=TRUE)
-cat("# At ", format(Sys.time()), "\n# SVN ", svnver, "\n")
 print(res)
+cat("# Done ", format(Sys.time()), "\n")

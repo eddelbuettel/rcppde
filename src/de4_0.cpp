@@ -19,7 +19,7 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::rowvec & t_bestP, 
 	   arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, double       & t_bestC,	
            arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
-           arma::mat & d_pop, /*arma::rowvec*/ Rcpp::List & d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
+           arma::mat & d_pop, Rcpp::List & d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval);
 //RcppExport void permute(arma::icolvec & ia_urn2, int i_avoid, arma::icolvec & ia_urntmp);
 //RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
@@ -73,7 +73,6 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     arma::mat d_pop(i_NP, i_D); 
-    //arma::rowvec d_storepop(i_NP*i_D*i_nstorepop); 
     Rcpp::List d_storepop(i_nstorepop);
     arma::mat d_bestmemit(i_itermax, i_D);       
     arma::rowvec d_bestvalit(i_itermax); 	 
@@ -86,14 +85,14 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 	  d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
 
     // and return a named list to R
-    return Rcpp::List::create(Rcpp::Named("bestmem")   = Rcpp::wrap(t_bestP),		// sexp_bestmem,
+    return Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,	// sexp_bestmem,
 			      Rcpp::Named("bestval")   = t_bestC,       // sexp_bestval,
 			      Rcpp::Named("nfeval")    = l_nfeval,   	// sexp_nfeval,
 			      Rcpp::Named("iter")      = i_iter,	// sexp_iter,
-			      Rcpp::Named("bestmemit") = Rcpp::wrap(d_bestmemit), 	// sexp_bestmemit,
-			      Rcpp::Named("bestvalit") = Rcpp::wrap(d_bestvalit),	// sexp_bestvalit,
-			      Rcpp::Named("pop")       = Rcpp::wrap(d_pop),    		// sexp_pop,
-			      Rcpp::Named("storepop")  = Rcpp::wrap(d_storepop));   	// sexp_storepop)
+			      Rcpp::Named("bestmemit") = d_bestmemit, 	// sexp_bestmemit,
+			      Rcpp::Named("bestvalit") = d_bestvalit,	// sexp_bestvalit,
+			      Rcpp::Named("pop")       = d_pop,		// sexp_pop,
+			      Rcpp::Named("storepop")  = d_storepop); 	// sexp_storepop)
     END_RCPP   // macro to fill in catch() part of try/catch exception handler
 }
 
@@ -105,7 +104,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, arma::rowvec & t_bestP, 
            arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, double & t_bestC,
            arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
-           arma::mat &d_pop, /*arma::rowvec*/ Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
+           arma::mat &d_pop, Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
     const int urn_depth = 5;   			// 4 + one index to avoid 
@@ -137,13 +136,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
     GetRNGstate();
 
-    ta_popP.at(0,0) = 0;
-    
     initialpop.zeros();		 		// initialize initial popuplation 
     d_bestmemit.zeros();    			// initialize best members
     d_bestvalit.zeros();			// initialize best values 
     d_pop.zeros();				// initialize best population
-    //d_storepop.zeros();			// initialize stored populations 
     i_nstorepop = (i_nstorepop < 0) ? 0 : i_nstorepop;
       
     if (i_specinitialpop > 0) {    		// if initial population provided, initialize with values 
@@ -154,7 +150,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     for (i = 0; i < i_NP; i++) {		// ------Initialization-----------------------------
 	if (i_specinitialpop <= 0) { 		// random initial member 
 	    for (j = 0; j < i_D; j++) {
-		ta_popP.at(i,j) = fa_minbound[j] + unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
+		ta_popP.at(i,j) = fa_minbound[j] + ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 	    }
 	} else { 				// or user-specified initial member 
 	    ta_popP.row(i) = initialpop.row(i);
@@ -176,13 +172,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     i_xav = 1;
   
     while ((i_iter < i_itermax) && (t_bestC > VTR)) {    // main loop ====================================
-	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {  	// store intermediate populations -- FIXME could be list (or arma::field) of matrices
-	    // for (i = 0; i < i_NP; i++) {
-	    // 	for (j = 0; j < i_D; j++) {
-	    // 	    d_storepop[popcnt] = ta_oldP.at(i,j);
-	    // 	    popcnt++;
-	    // 	}
-	    // }
+	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {  	// store intermediate populations
 	    d_storepop[popcnt++] = Rcpp::wrap(ta_oldP);
 	} // end store pop 
       
@@ -192,7 +182,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	t_bestitC = t_bestC;
 	i_iter++;				// increase iteration counter
      
-	f_dither = f_weight + unif_rand() * (1.0 - f_weight);	// ----computer dithering factor -----------------
+	f_dither = f_weight + ::unif_rand() * (1.0 - f_weight);	// ----computer dithering factor -----------------
       
 	if (i_strategy == 6) {			// ---DE/current-to-p-best/1 -----------------------------------------------------
 	    arma::rowvec temp_oldC = ta_oldC;					// create a copy of ta_oldC to avoid changing it 
@@ -216,81 +206,80 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    switch (i_strategy) { 		// and putting default value one first
 
 	    case 2:				// ---DE/local-to-best/1/bin---------------------------------------------------
-		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
 		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
-		} while ((unif_rand() < f_cross) && (++k < i_D));
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
 
 	    case 1:				// ---classical strategy DE/rand/1/bin-----------------------------------------
-		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
-		} while ((unif_rand() < f_cross) && (++k < i_D));
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
 
 	    case 3:				// ---DE/best/1/bin with jitter------------------------------------------------
-		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
-		    f_jitter = 0.0001 * unif_rand() + f_weight; 
+		    f_jitter = 0.0001 * ::unif_rand() + f_weight; 
 		    t_tmpP[j] = t_bestitP[j] + f_jitter * (ta_oldP.at(i_r1,j) - ta_oldP.at(i_r2,j));
 		    j = (j + 1) % i_D;
-		} while ((unif_rand() < f_cross) && (++k < i_D));
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
 
 	    case 4:				// ---DE/rand/1/bin with per-vector-dither-------------------------------------
-		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target *
-		    t_tmpP[j] = ta_oldP.at(i_r1,j) + (f_weight + unif_rand()*(1.0 - f_weight))* (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
+		    t_tmpP[j] = ta_oldP.at(i_r1,j) + (f_weight + ::unif_rand()*(1.0 - f_weight))* (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
-		} while ((unif_rand() < f_cross) && (++k < i_D));
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
 
 	    case 5:				// ---DE/rand/1/bin with per-generation-dither---------------------------------
-		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_dither * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
-		} while ((unif_rand() < f_cross) && (++k < i_D));
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
 
 	    case 6:				// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
-		i_pbest = sortIndex[static_cast<int>(unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
-		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
+		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i,j) + f_weight * (ta_oldP.at(i_pbest,j) - ta_oldP.at(i,j)) + f_weight * (ta_oldP.at(i_r1,j) - ta_oldP.at(i_r2,j));
 		    j = (j + 1) % i_D;
-		} while ((unif_rand() < f_cross) && (++k < i_D));
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
 
 	    default:				// ---variation to DE/rand/1/bin: either-or-algorithm--------------------------
-		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
-		if (unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
+		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+		if (::unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
 		    do {
 			// add fluctuation to random target */
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 			j = (j + 1) % i_D;
-		    } while ((unif_rand() < f_cross) && (++k < i_D));
+		    } while ((::unif_rand() < f_cross) && (++k < i_D));
 
 		} else { 			// recombination with K = 0.5*(F+1) -. F-K-Rule 
 		    do {
 			// add fluctuation to random target */
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + 0.5 * (f_weight + 1.0) * (ta_oldP.at(i_r2,j) + ta_oldP.at(i_r3,j) - 2 * ta_oldP.at(i_r1,j));
 			j = (j + 1) % i_D;
-		    } while ((unif_rand() < f_cross) && (++k < i_D));
+		    } while ((::unif_rand() < f_cross) && (++k < i_D));
 		}
 		break;
 	    } // end switch (i_strategy) ...
 	
-	    // ----boundary constraints, bounce-back method was not enforcing bounds correctly
-	    for (j = 0; j < i_D; j++) {
+	    for (j = 0; j < i_D; j++) {		// ----boundary constraints, bounce-back method was not enforcing bounds correctly
 		if (t_tmpP[j] < fa_minbound[j]) {
-		    t_tmpP[j] = fa_minbound[j] + unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
+		    t_tmpP[j] = fa_minbound[j] + ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 		}
 		if (t_tmpP[j] > fa_maxbound[j]) {
-		    t_tmpP[j] = fa_maxbound[j] - unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
+		    t_tmpP[j] = fa_maxbound[j] - ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 		}
 	    }
 
@@ -422,7 +411,7 @@ inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int 
 	ia_urn1[i_urn1] = ia_urn1[k-1];    /* move highest index to fill gap */
 	k = k - 1;                         /* reduce number of accessible indices */
 	i_urn2 = i_urn2 + 1;               /* next position in urn2 */
-	i_urn1 = static_cast<int>(unif_rand() * k);   /* choose a random index */
+	i_urn1 = static_cast<int>(::unif_rand() * k);   /* choose a random index */
     }
     PutRNGstate();
 }
