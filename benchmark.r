@@ -23,13 +23,13 @@ basicDE <- function(n, maxIt, fun) DEoptim::DEoptim(fn=fun, lower=rep(-25, n), u
 cppDE <- function(n, maxIt, fun) RcppDE::DEoptim(fn=fun, lower=rep(-25, n), upper=rep(25, n),
                                                  control=list(NP=10*n, itermax=maxIt, trace=FALSE))
 
-runPair <- function(n, maxIt, fun) {
+set.seed(42)
+valBasic <- basicDE(5, maxIt, fun)
+set.seed(42)
+valCpp <- cppDE(5, maxIt, fun)
+stopifnot( all.equal(valBasic, valCpp) )
 
-    set.seed(42)
-    valBasic <- basicDE(n, maxIt, fun)
-    set.seed(42)
-    valCpp <- cppDE(n, maxIt, fun)
-    stopifnot( all.equal(valBasic, valCpp) )
+runPair <- function(n, maxIt, fun) {
 
     gc()
     set.seed(42)
