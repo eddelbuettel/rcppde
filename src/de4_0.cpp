@@ -8,6 +8,7 @@
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
 #include <RcppArmadillo.h>
+//#include <google/profiler.h>
 
 RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho);
 void devol(double VTR, double f_weight, double fcross, int i_bs_flag, 
@@ -18,12 +19,15 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::rowvec & t_bestP, 
 	   arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, double       & t_bestC,	
            arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
-           arma::mat & d_pop, arma::rowvec & d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
+           arma::mat & d_pop, /*arma::rowvec*/ Rcpp::List & d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval);
+//RcppExport void permute(arma::icolvec & ia_urn2, int i_avoid, arma::icolvec & ia_urntmp);
+//RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
-RcppExport double evaluate(long & l_nfeval, const arma::rowvec & param, SEXP par, SEXP fcall, SEXP env);
+RcppExport double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env);
 
 RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
+    //ProfilerStart("/tmp/RcppDE.prof");
     BEGIN_RCPP ;	// macro to fill in try part of try/catch exception handler
 
     Rcpp::Function fn(fnS);						// function to mininise
@@ -69,7 +73,8 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     arma::mat d_pop(i_NP, i_D); 
-    arma::rowvec d_storepop(i_NP*i_D*i_nstorepop); 
+    //arma::rowvec d_storepop(i_NP*i_D*i_nstorepop); 
+    Rcpp::List d_storepop(i_nstorepop);
     arma::mat d_bestmemit(i_itermax, i_D);       
     arma::rowvec d_bestvalit(i_itermax); 	 
     int i_iter = 0;
@@ -95,22 +100,25 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::rowvec & fa_minbound, arma::rowvec & fa_maxbound, SEXP fcall, SEXP rho, int i_trace,
-           int i_strategy, int i_D, int i_NP, int i_itermax,
-           arma::mat & initialpopm, int i_storepopfrom, int i_storepopfreq, 
-           int i_specinitialpop, int i_check_winner, int i_av_winner,
-           arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, 
-	   arma::rowvec & t_bestP, arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, 
-	   double & t_bestC,
+           int i_strategy, int i_D, int i_NP, int i_itermax, arma::mat & initialpopm, 
+	   int i_storepopfrom, int i_storepopfreq, int i_specinitialpop, int i_check_winner, int i_av_winner,
+           arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, arma::rowvec & t_bestP, 
+           arma::rowvec & ta_popC, arma::rowvec & ta_oldC, arma::rowvec & ta_newC, double & t_bestC,
            arma::rowvec & t_bestitP, arma::rowvec & t_tmpP, arma::rowvec & tempP,
-           arma::mat &d_pop, arma::rowvec &d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
+           arma::mat &d_pop, /*arma::rowvec*/ Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::rowvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
     const int urn_depth = 5;   			// 4 + one index to avoid 
-    Rcpp::NumericVector par(i_D);  		// initialize parameter vector to pass to evaluate function 
+    //arma::rowvec parvec(i_D);  		// initialize parameter vector to pass to evaluate function 
+    //SEXP par = Rcpp::wrap(parvec);
+    Rcpp::NumericVector par(i_D);
     int i, j, k, i_r1, i_r2, i_r3, i_r4;  	// counting variables and placeholders for random indexes
     
     int ia_urn2[urn_depth];
-    Rcpp::IntegerVector ia_urntmp(i_NP); 	// so that we don't need to re-allocated each time in permute
+    //Rcpp::IntegerVector ia_urntmp(i_NP); 	// so that we don't need to re-allocated each time in permute
+    arma::irowvec ia_urntmp(i_NP);
+    //arma::icolvec::fixed<urn_depth> ia_urn2; 	// fixed-size vector for urn draws
+    //arma::icolvec ia_urntmp(i_NP); 		// so that we don't need to re-allocated each time in permute
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     int i_xav, popcnt, bestacnt, same; 		// lazy cnters 
@@ -135,19 +143,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     d_bestmemit.zeros();    			// initialize best members
     d_bestvalit.zeros();			// initialize best values 
     d_pop.zeros();				// initialize best population
-    d_storepop.zeros();				// initialize stored populations 
+    //d_storepop.zeros();			// initialize stored populations 
     i_nstorepop = (i_nstorepop < 0) ? 0 : i_nstorepop;
       
     if (i_specinitialpop > 0) {    		// if initial population provided, initialize with values 
-	k = 0;
-	for (j = 0; j < i_D; j++) { 		// FIXME: should really have a matrix passed in ! 
-	    for (i = 0; i < i_NP; i++) {
-		initialpop.at(i,j) = initialpopm[k];
-		k += 1;
-	    }
-	}
+	initialpop = initialpopm;
     }
-    l_nfeval = 0;    				// number of function evaluations (this is an input via DEoptim.control, but we over-write it?) 
+    //l_nfeval = 0;    				// already init'ed in main function
 
     for (i = 0; i < i_NP; i++) {		// ------Initialization-----------------------------
 	if (i_specinitialpop <= 0) { 		// random initial member 
@@ -157,7 +159,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	} else { 				// or user-specified initial member 
 	    ta_popP.row(i) = initialpop.row(i);
 	} 
-	ta_popC[i] = evaluate(l_nfeval, ta_popP.row(i), par, fcall, rho);
+	arma::rowvec r = ta_popP.row(i);
+	ta_popC[i] = evaluate(l_nfeval, r.memptr(), par, fcall, rho);
 	if (i == 0 || ta_popC[i] <= t_bestC) {
 	    t_bestC = ta_popC[i];
 	    t_bestP = ta_popP.row(i);
@@ -174,12 +177,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
   
     while ((i_iter < i_itermax) && (t_bestC > VTR)) {    // main loop ====================================
 	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {  	// store intermediate populations -- FIXME could be list (or arma::field) of matrices
-	    for (i = 0; i < i_NP; i++) {
-		for (j = 0; j < i_D; j++) {
-		    d_storepop[popcnt] = ta_oldP.at(i,j);
-		    popcnt++;
-		}
-	    }
+	    // for (i = 0; i < i_NP; i++) {
+	    // 	for (j = 0; j < i_D; j++) {
+	    // 	    d_storepop[popcnt] = ta_oldP.at(i,j);
+	    // 	    popcnt++;
+	    // 	}
+	    // }
+	    d_storepop[popcnt++] = Rcpp::wrap(ta_oldP);
 	} // end store pop 
       
 	d_bestmemit.row(i_iter) = t_bestP;	// store the best member
@@ -200,102 +204,85 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    t_tmpP = ta_oldP.row(i);		// t_tmpP is the vector to mutate and eventually select
 	    t_tmpC = ta_oldC[i];
 
-	    permute(ia_urn2, urn_depth, i_NP, i, ia_urntmp.begin()); // Pick 4 random and distinct 
-	    i_r1 = ia_urn2[1];  // population members 
+	    permute(ia_urn2, urn_depth, i_NP, i, ia_urntmp.memptr()); // Pick 4 random and distinct 
+	    //permute(ia_urn2, i, ia_urntmp); 	// Pick 4 random and distinct 
+	    i_r1 = ia_urn2[1];  		// population members 
 	    i_r2 = ia_urn2[2];
 	    i_r3 = ia_urn2[3];
 	    i_r4 = ia_urn2[4];
-		
-	    // ===Choice of strategy=======================================================
-	    if (i_strategy == 1) { 		// ---classical strategy DE/rand/1/bin-----------------------------------------
-	  
-		j = (int)(unif_rand() * i_D); 	// random parameter 
-		k = 0;
-		do {
-		    // add fluctuation to random target 
-		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
-		    j = (j + 1) % i_D;
-		    k++;
-		} while ((unif_rand() < f_cross) && (k < i_D));
+	    k = 0;				// loop counter used in all strategies below 
 
-	    } else if (i_strategy == 2) {	// ---DE/local-to-best/1/bin---------------------------------------------------
-	 
-		j = (int)(unif_rand() * i_D); 	// random parameter 
-		k = 0;
-		do {
-		    // add fluctuation to random target 
+	    // ===Choice of strategy=======================================================
+	    switch (i_strategy) { 		// and putting default value one first
+
+	    case 2:				// ---DE/local-to-best/1/bin---------------------------------------------------
+		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
 		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
-		    k++;
-		} while ((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (++k < i_D));
+		break;
 
-	    } else if (i_strategy == 3) {	// ---DE/best/1/bin with jitter------------------------------------------------
-	 	  
-		j = (int)(unif_rand() * i_D); 	// random parameter 
-		k = 0;
-		do {
-		    f_jitter = 0.0001 * unif_rand() + f_weight; // add fluctuation to random target 
+	    case 1:				// ---classical strategy DE/rand/1/bin-----------------------------------------
+		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
+		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
+		    j = (j + 1) % i_D;
+		} while ((unif_rand() < f_cross) && (++k < i_D));
+		break;
+
+	    case 3:				// ---DE/best/1/bin with jitter------------------------------------------------
+		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
+		    f_jitter = 0.0001 * unif_rand() + f_weight; 
 		    t_tmpP[j] = t_bestitP[j] + f_jitter * (ta_oldP.at(i_r1,j) - ta_oldP.at(i_r2,j));
 		    j = (j + 1) % i_D;
-		    k++;
-		} while ((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (++k < i_D));
+		break;
 
-	    } else if (i_strategy == 4) {	// ---DE/rand/1/bin with per-vector-dither-------------------------------------
-		  
-		j = (int)(unif_rand() * i_D); 	// random parameter 
-		k = 0;
-		do {
-		    // add fluctuation to random target *
+	    case 4:				// ---DE/rand/1/bin with per-vector-dither-------------------------------------
+		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target *
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + (f_weight + unif_rand()*(1.0 - f_weight))* (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 		    j = (j + 1) % i_D;
-		    k++;
-		} while ((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (++k < i_D));
+		break;
 
-	    } else if (i_strategy == 5) {	// ---DE/rand/1/bin with per-generation-dither---------------------------------
-	  
-		j = (int)(unif_rand() * i_D); 	// random parameter 
-		k = 0;
-		do {
-		    // add fluctuation to random target 
+	    case 5:				// ---DE/rand/1/bin with per-generation-dither---------------------------------
+		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i_r1,j) + f_dither * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
-	    
 		    j = (j + 1) % i_D;
-		    k++;
-		} while ((unif_rand() < f_cross) && (k < i_D));
-       
-	    } else if (i_strategy == 6) {	// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
+		} while ((unif_rand() < f_cross) && (++k < i_D));
+		break;
 
-		i_pbest = sortIndex[(int)(unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
-		j = (int)(unif_rand() * i_D); 			// random parameter 
-		k = 0;
-		do {
-		    // add fluctuation to random target 
+	    case 6:				// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
+		i_pbest = sortIndex[static_cast<int>(unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
+		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(i,j) + f_weight * (ta_oldP.at(i_pbest,j) - ta_oldP.at(i,j)) + f_weight * (ta_oldP.at(i_r1,j) - ta_oldP.at(i_r2,j));
 		    j = (j + 1) % i_D;
-		    k++;
-		} while((unif_rand() < f_cross) && (k < i_D));
+		} while ((unif_rand() < f_cross) && (++k < i_D));
+		break;
 
-	    } else {				// ---variation to DE/rand/1/bin: either-or-algorithm--------------------------
-	  
-		j = (int)(unif_rand() * i_D); 	// random parameter 
-		k = 0;
+	    default:				// ---variation to DE/rand/1/bin: either-or-algorithm--------------------------
+		j = static_cast<int>(unif_rand() * i_D); 	// random parameter 
 		if (unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
 		    do {
 			// add fluctuation to random target */
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + f_weight * (ta_oldP.at(i_r2,j) - ta_oldP.at(i_r3,j));
 			j = (j + 1) % i_D;
-			k++;
-		    } while((unif_rand() < f_cross) && (k < i_D));
+		    } while ((unif_rand() < f_cross) && (++k < i_D));
 
 		} else { 			// recombination with K = 0.5*(F+1) -. F-K-Rule 
 		    do {
 			// add fluctuation to random target */
 			t_tmpP[j] = ta_oldP.at(i_r1,j) + 0.5 * (f_weight + 1.0) * (ta_oldP.at(i_r2,j) + ta_oldP.at(i_r3,j) - 2 * ta_oldP.at(i_r1,j));
 			j = (j + 1) % i_D;
-			k++;
-		    } while((unif_rand() < f_cross) && (k < i_D));
+		    } while ((unif_rand() < f_cross) && (++k < i_D));
 		}
-	    } // end if (i_strategy ...
+		break;
+	    } // end switch (i_strategy) ...
 	
 	    // ----boundary constraints, bounce-back method was not enforcing bounds correctly
 	    for (j = 0; j < i_D; j++) {
@@ -308,7 +295,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 
 	    // ------Trial mutation now in t_tmpP-----------------
-	    t_tmpC = evaluate(l_nfeval, t_tmpP, par, fcall, rho); 	    // Evaluate mutant in t_tmpP[]
+	    t_tmpC = evaluate(l_nfeval, t_tmpP.memptr(), par, fcall, rho);	// Evaluate mutant in t_tmpP[]
 
 	    // note that i_bs_flag means that we will choose the best NP vectors from the old and new population later
 	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {
@@ -368,7 +355,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		}
 	    if (same && i_iter > 1)  {
 		i_xav++;
-		tmp_best = evaluate(l_nfeval, t_bestP, par, fcall, rho);			// if re-evaluation of winner 
+		tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);			// if re-evaluation of winner 
 		
 		if (i_av_winner)		//  possibly letting the winner be the average of all past generations 
 		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
@@ -381,13 +368,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	t_bestitP = t_bestP;
 	t_bestitC = t_bestC;
 
-	if ( i_trace > 0 ) {
-	    if ( (i_iter % i_trace) == 0 ) {
-		Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, t_bestC);
-		for (j = 0; j < i_D; j++)
-		    Rprintf("%12.6f", t_bestP[j]);
-		Rprintf("\n");
-	    }
+	if ( (i_trace > 0)  &&  ((i_iter % i_trace) == 0) ) {
+	    Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, t_bestC);
+	    for (j = 0; j < i_D; j++)
+		Rprintf("%12.6f", t_bestP[j]);
+	    Rprintf("\n");
 	}
     } // end loop through generations 
     
@@ -395,9 +380,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     i_iterations = i_iter;
 
     PutRNGstate();
+    //ProfilerStop();
 }
 
 inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[])
+//RcppExport inline void permute(arma::icolvec & ia_urn2, int i_avoid, arma::icolvec & ia_urn1)
 /********************************************************************
  ** Function       : void permute(int ia_urn2[], int i_urn2_depth)
  ** Author         : Rainer Storn (w/bug fixes contributed by DEoptim users)
@@ -420,12 +407,14 @@ inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int 
  *********************************************************************/
 {
     GetRNGstate();
-
     int k = i_NP;
+    //int i_urn2_depth = ia_urn2.n_elem; 		// ie const urn_depth
+    //int i_NP = ia_urn1.n_elem;			
+    //int k = ia_urn1.n_elem;			
     int i_urn1 = 0;
     int i_urn2 = 0;
     for (int i = 0; i < i_NP; i++)
-	ia_urn1[i] = i; /* initialize urn1 */
+	ia_urn1[i] = i; 		   /* initialize urn1 */
 
     i_urn1 = i_avoid;                      /* get rid of the index to be avoided and place it in position 0. */
     while (k > i_NP - i_urn2_depth) {      /* i_urn2_depth is the amount of indices wanted (must be <= NP) */
@@ -433,8 +422,7 @@ inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int 
 	ia_urn1[i_urn1] = ia_urn1[k-1];    /* move highest index to fill gap */
 	k = k - 1;                         /* reduce number of accessible indices */
 	i_urn2 = i_urn2 + 1;               /* next position in urn2 */
-	i_urn1 = (int)(unif_rand() * k);   /* choose a random index */
+	i_urn1 = static_cast<int>(unif_rand() * k);   /* choose a random index */
     }
-
     PutRNGstate();
 }

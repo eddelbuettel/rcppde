@@ -96,16 +96,17 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
   outC <- .Call("DEoptimC", lower, upper, fn1, ctrl, new.env(), PACKAGE = "RcppDE")
   ##
   if (length(outC$storepop) > 0) {
-    nstorepop <- floor((outC$iter - ctrl$storepopfrom) / ctrl$storepopfreq)
-    storepop <- list()
-    cnt <- 1
-    for(i in 1:nstorepop) {
-      idx <- cnt:((cnt - 1) + (ctrl$NP * ctrl$npar))
-      storepop[[i]] <- matrix(outC$storepop[idx], nrow = ctrl$NP, ncol = ctrl$npar,
-                         byrow = TRUE)
-      cnt <- cnt + (ctrl$NP * ctrl$npar)
-      dimnames(storepop[[i]]) <- list(1:ctrl$NP, nam)
-    }
+    ## nstorepop <- floor((outC$iter - ctrl$storepopfrom) / ctrl$storepopfreq)
+    ## storepop <- list()
+    ## cnt <- 1
+    ## for(i in 1:nstorepop) {
+    ##   idx <- cnt:((cnt - 1) + (ctrl$NP * ctrl$npar))
+    ##   storepop[[i]] <- matrix(outC$storepop[idx], nrow = ctrl$NP, ncol = ctrl$npar,
+    ##                      byrow = TRUE)
+    ##   cnt <- cnt + (ctrl$NP * ctrl$npar)
+    ##   dimnames(storepop[[i]]) <- list(1:ctrl$NP, nam)
+    ## }
+    storepop <- outC$storepop
   }
   else {
     storepop = NULL
