@@ -49,7 +49,7 @@ reps <- c(2, 5, 20)
 
 res <- rbind(do.call(rbind, lapply(reps, runPair, maxIt, function(...) Rastrigin(...))),
              do.call(rbind, lapply(reps, runPair, maxIt, function(...) Wild(...))),
-             do.call(rbind, lapply(reps, runPair, maxIt, function(...) Genrose(...))),
+             do.call(rbind, lapply(reps, runPair, maxIt, function(...) Genrose(...)))
 #             runPair(50, maxIt, function(...) Genrose(...))
 #             runPair(100, maxIt, function(...) Genrose(...))
              )

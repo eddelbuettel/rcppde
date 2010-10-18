@@ -51,7 +51,7 @@ reps <- c(50, 100, 200)
 
 res <- rbind(do.call(rbind, lapply(reps, runPair, maxIt, function(...) Rastrigin(...))),
              do.call(rbind, lapply(reps, runPair, maxIt, function(...) Wild(...))),
-             do.call(rbind, lapply(reps, runPair, maxIt, function(...) Genrose(...))),
+             do.call(rbind, lapply(reps, runPair, maxIt, function(...) Genrose(...)))
              )
 res <- rbind(res, colMeans(res))
 
@@ -60,14 +60,6 @@ rownames(res) <- c(paste("Rastrigin", reps, sep=""),
                    paste("Genrose", reps, sep=""),
                    "MEANS")
 
-res <- rbind(res, colMeans(res))
-rownames(res) <- c(#"Rastrigin2", "Rastrigin5", "Rastrigin20"
-                   "Rastrigin50", "Rastrigin100", "Rastrigin200"
-                   #,"Wild2", "Wild5", "Wild20"
-                   ,"Wild50", "Wild100", "Wild200"
-                   #"Genrose2", "Genrose5", "Genrose20"
-                   ,"Genrose50", "Genrose100", "Genrose200"
-                   ,"MEANS")
 res$ratioRcppToBasic <- res[,2]/res[,1]
 res$pctGainOfRcpp <- (1-res[,2]/res[,1])*100
 
