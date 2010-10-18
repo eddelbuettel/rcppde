@@ -19,25 +19,27 @@ suppressMessages(library(DEoptim)) 	# the original, currently 2.0.7
 suppressMessages(library(RcppDE))    	# the contender
 
 basicDE <- function(n, maxIt, fun) DEoptim::DEoptim(fn=fun, lower=rep(-25, n), upper=rep(25, n),
-                                                    control=list(NP=10*n, itermax=maxIt, trace=FALSE))
+                                                    control=list(NP=10*n, itermax=maxIt, trace=FALSE))#, bs=TRUE))
 cppDE <- function(n, maxIt, fun) RcppDE::DEoptim(fn=fun, lower=rep(-25, n), upper=rep(25, n),
-                                                 control=list(NP=10*n, itermax=maxIt, trace=FALSE))
+                                                 control=list(NP=10*n, itermax=maxIt, trace=FALSE))#, bs=TRUE))
 
 runPair <- function(n, maxIt, fun) {
 
     set.seed(42)
     valBasic <- basicDE(n, maxIt, fun)
+    #print(str(valBasic))
     set.seed(42)
     valCpp <- cppDE(n, maxIt, fun)
+    #print(str(valCpp))
     stopifnot( all.equal(valBasic, valCpp) )
 
     gc()
     set.seed(42)
-    bt <- mean(replicate(10, system.time(invisible(basicDE(n, maxIt, fun)))[3]), trim=0.1)
+    bt <- system.time(invisible(basicDE(n, maxIt, fun)))[3]
 
     gc()
     set.seed(42)
-    ct <- mean(replicate(10, system.time(invisible(cppDE(n, maxIt, fun)))[3]), trim=0.1)
+    ct <- system.time(invisible(cppDE(n, maxIt, fun)))[3]
 
     return(data.frame(DEoptim=bt, RcppDE=ct))
 }
@@ -45,19 +47,27 @@ runPair <- function(n, maxIt, fun) {
 svnver <- system("svnversion", intern=TRUE)
 cat("# At ", format(Sys.time()), "\n# SVN ", svnver, "\n")
 
-reps <- c(2, 5, 20)
+reps <- c(50, 100, 200)
 
 res <- rbind(do.call(rbind, lapply(reps, runPair, maxIt, function(...) Rastrigin(...))),
              do.call(rbind, lapply(reps, runPair, maxIt, function(...) Wild(...))),
              do.call(rbind, lapply(reps, runPair, maxIt, function(...) Genrose(...))),
-#             runPair(50, maxIt, function(...) Genrose(...))
-#             runPair(100, maxIt, function(...) Genrose(...))
              )
 res <- rbind(res, colMeans(res))
+
 rownames(res) <- c(paste("Rastrigin", reps, sep=""),
                    paste("Wild", reps, sep=""),
                    paste("Genrose", reps, sep=""),
                    "MEANS")
+
+res <- rbind(res, colMeans(res))
+rownames(res) <- c(#"Rastrigin2", "Rastrigin5", "Rastrigin20"
+                   "Rastrigin50", "Rastrigin100", "Rastrigin200"
+                   #,"Wild2", "Wild5", "Wild20"
+                   ,"Wild50", "Wild100", "Wild200"
+                   #"Genrose2", "Genrose5", "Genrose20"
+                   ,"Genrose50", "Genrose100", "Genrose200"
+                   ,"MEANS")
 res$ratioRcppToBasic <- res[,2]/res[,1]
 res$pctGainOfRcpp <- (1-res[,2]/res[,1])*100
 
