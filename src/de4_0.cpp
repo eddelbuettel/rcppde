@@ -8,7 +8,7 @@
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
 #include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
-//#include <google/profiler.h>
+#include <google/profiler.h>
 
 RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho);
 void devol(double VTR, double f_weight, double fcross, int i_bs_flag, 
@@ -25,72 +25,80 @@ void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urnt
 RcppExport double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env);
 
 RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
-    //ProfilerStart("/tmp/RcppDE.prof");
-    BEGIN_RCPP ;	// macro to fill in try part of try/catch exception handler
+    
+    try {
+	//ProfilerStart("/tmp/RcppDE.prof");
+	Rcpp::Function      fn(fnS);					// function to mininise
+	Rcpp::Environment   rho(rhoS); 					// environment to do it in
+	Rcpp::NumericVector f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
+	Rcpp::List          control(controlS); 				// named list of params
 
-    Rcpp::Function      fn(fnS);					// function to mininise
-    Rcpp::Environment   rho(rhoS); 					// environment to do it in
-    Rcpp::NumericVector f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
-    Rcpp::List          control(controlS); 				// named list of params
+	double VTR           = Rcpp::as<double>(control["VTR"]);	// value to reach
+	int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
+	int i_itermax        = Rcpp::as<int>(control["itermax"]);	// Maximum number of generations
+	long l_nfeval        = 0;//Rcpp::as<int>(control["nfeval"]);	// number of function evaluations (NOT passed in)
+	int i_D              = Rcpp::as<int>(control["npar"]);		// Dimension of parameter vector
+	int i_NP             = Rcpp::as<int>(control["NP"]);		// Number of population members
+	int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
+	int i_storepopfreq   = Rcpp::as<int>(control["storepopfreq"]);  // How often to store populations 
+	int i_specinitialpop = Rcpp::as<int>(control["specinitialpop"]);// User-defined inital population 
+	Rcpp::NumericMatrix initialpopm = Rcpp::as<Rcpp::NumericMatrix>(control["initialpop"]);
+	double f_weight      = Rcpp::as<double>(control["F"]);  	// stepsize 
+	double f_cross       = Rcpp::as<double>(control["CR"]);  	// crossover probability 
+	int i_bs_flag        = Rcpp::as<int>(control["bs"]);   		// Best of parent and child 
+	int i_trace          = Rcpp::as<int>(control["trace"]);  	// Print progress? 
+	int i_check_winner   = Rcpp::as<int>(control["checkWinner"]); 	// Re-evaluate best parameter vector? 
+	int i_av_winner      = Rcpp::as<int>(control["avWinner"]);  	// Average 
+	double i_pPct        = Rcpp::as<double>(control["p"]); 		// p to define the top 100p% best solutions 
 
-    double VTR           = Rcpp::as<double>(control["VTR"]);		// value to reach
-    int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
-    int i_itermax        = Rcpp::as<int>(control["itermax"]);		// Maximum number of generations
-    long l_nfeval        = 0;//Rcpp::as<int>(control["nfeval"]);	// number of function evaluations (NOT passed in)
-    int i_D              = Rcpp::as<int>(control["npar"]);		// Dimension of parameter vector
-    int i_NP             = Rcpp::as<int>(control["NP"]);		// Number of population members
-    int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
-    int i_storepopfreq   = Rcpp::as<int>(control["storepopfreq"]);  	// How often to store populations 
-    int i_specinitialpop = Rcpp::as<int>(control["specinitialpop"]);  	// User-defined inital population 
-    Rcpp::NumericMatrix initialpopm = Rcpp::as<Rcpp::NumericMatrix>(control["initialpop"]);
-    double f_weight      = Rcpp::as<double>(control["F"]);  		// stepsize 
-    double f_cross       = Rcpp::as<double>(control["CR"]);  		// crossover probability 
-    int i_bs_flag        = Rcpp::as<int>(control["bs"]);   		// Best of parent and child 
-    int i_trace          = Rcpp::as<int>(control["trace"]);  		// Print progress? 
-    int i_check_winner   = Rcpp::as<int>(control["checkWinner"]); 	// Re-evaluate best parameter vector? 
-    int i_av_winner      = Rcpp::as<int>(control["avWinner"]);  	// Average 
-    double i_pPct        = Rcpp::as<double>(control["p"]); 		// p to define the top 100p% best solutions 
+	arma::colvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert three Rcpp vectors to arma vectors
+	arma::colvec maxbound(f_upper.begin(), f_upper.size(), false);
+	arma::mat initpopm(initialpopm.begin(), initialpopm.rows(), initialpopm.cols(), false);
 
-    arma::colvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert three Rcpp vectors to arma vectors
-    arma::colvec maxbound(f_upper.begin(), f_upper.size(), false);
-    arma::mat initpopm(initialpopm.begin(), initialpopm.rows(), initialpopm.cols(), false);
+	arma::mat ta_popP(i_D, i_NP*2);    				// Data structures for parameter vectors 
+	arma::mat ta_oldP(i_D, i_NP);
+	arma::mat ta_newP(i_D, i_NP);
+	arma::colvec t_bestP(i_D); 
 
-    arma::mat ta_popP(i_D, i_NP*2);    					// Data structures for parameter vectors 
-    arma::mat ta_oldP(i_D, i_NP);
-    arma::mat ta_newP(i_D, i_NP);
-    arma::colvec t_bestP(i_D); 
+	arma::colvec ta_popC(i_NP*2);  				    	// Data structures for obj. fun. values associated with par. vectors 
+	arma::colvec ta_oldC(i_NP);
+	arma::colvec ta_newC(i_NP);
+	double t_bestC; 
 
-    arma::colvec ta_popC(i_NP*2);  				    	// Data structures for obj. fun. values associated with par. vectors 
-    arma::colvec ta_oldC(i_NP);
-    arma::colvec ta_newC(i_NP);
-    double t_bestC; 
+	arma::colvec t_bestitP(i_D);
+	arma::colvec t_tmpP(i_D); 
 
-    arma::colvec t_bestitP(i_D);
-    arma::colvec t_tmpP(i_D); 
+	int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
+	arma::mat d_pop(i_D, i_NP); 
+	Rcpp::List d_storepop(i_nstorepop);
+	arma::mat d_bestmemit(i_D, i_itermax);       
+	arma::colvec d_bestvalit(i_itermax); 	 
+	int i_iter = 0;
 
-    int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
-    arma::mat d_pop(i_D, i_NP); 
-    Rcpp::List d_storepop(i_nstorepop);
-    arma::mat d_bestmemit(i_D, i_itermax);       
-    arma::colvec d_bestvalit(i_itermax); 	 
-    int i_iter = 0;
+	// call actual Differential Evolution optimization given the parameters
+	devol(VTR, f_weight, f_cross, i_bs_flag, minbound, maxbound, Rcpp::wrap(fn), Rcpp::wrap(rho), i_trace,
+	      i_strategy, i_D, i_NP, i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
+	      ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP,
+	      d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
 
-    // call actual Differential Evolution optimization given the parameters
-    devol(VTR, f_weight, f_cross, i_bs_flag, minbound, maxbound, Rcpp::wrap(fn), Rcpp::wrap(rho), i_trace,
-	  i_strategy, i_D, i_NP, i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
-	  ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP,
-	  d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
+	// and return a named list to R
+	Rcpp::List rv = Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,
+					   Rcpp::Named("bestval")   = t_bestC,
+					   Rcpp::Named("nfeval")    = l_nfeval,
+					   Rcpp::Named("iter")      = i_iter,
+					   Rcpp::Named("bestmemit") = trans(d_bestmemit),
+					   Rcpp::Named("bestvalit") = d_bestvalit,
+					   Rcpp::Named("pop")       = trans(d_pop),
+					   Rcpp::Named("storepop")  = d_storepop); 
+	//ProfilerStop();
+	return rv;
+    } catch( std::exception& ex) { 
+	forward_exception_to_r(ex); 
+    } catch(...) { 
+	::Rf_error( "c++ exception (unknown reason)"); 
+    }
 
-    // and return a named list to R
-    return Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,	// sexp_bestmem,
-			      Rcpp::Named("bestval")   = t_bestC,       // sexp_bestval,
-			      Rcpp::Named("nfeval")    = l_nfeval,   	// sexp_nfeval,
-			      Rcpp::Named("iter")      = i_iter,	// sexp_iter,
-			      Rcpp::Named("bestmemit") = trans(d_bestmemit), 	// sexp_bestmemit,
-			      Rcpp::Named("bestvalit") = d_bestvalit,	// sexp_bestvalit,
-			      Rcpp::Named("pop")       = trans(d_pop),	// sexp_pop,
-			      Rcpp::Named("storepop")  = d_storepop); 	// sexp_storepop)
-    END_RCPP   // macro to fill in catch() part of try/catch exception handler
+    return R_NilValue;
 }
 
 
@@ -106,21 +114,14 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
     const int urn_depth = 5;   			// 4 + one index to avoid 
     Rcpp::NumericVector par(i_D);		// initialize parameter vector to pass to evaluate function 
-    int i, j, k, i_r1, i_r2, i_r3, i_r4;  	// counting variables and placeholders for random indexes
-    
     arma::icolvec::fixed<urn_depth> ia_urn2; 	// fixed-size vector for urn draws
     arma::icolvec ia_urntmp(i_NP); 		// so that we don't need to re-allocated each time in permute
-
-    int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
-    int i_xav, popcnt, bestacnt, same; 		// lazy cnters 
-    double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best; 
-    
     arma::mat initialpop(i_D, i_NP); 
-
+    int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     int p_NP = round(i_pPct * i_NP);  		// choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
     arma::icolvec sortIndex(i_NP); 		// sorted values of ta_oldC 
-    for(i = 0; i < i_NP; i++) sortIndex[i] = i; // FIXME: does this really need to get filled here?
+    //for(int i = 0; i < i_NP; i++) sortIndex[i] = i; // FIXME: does this really need to get filled here?
 
     GetRNGstate();
 
@@ -134,9 +135,9 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	initialpop = trans(initialpopm);	// transpose as we prefer columns for population members here
     }
 
-    for (i = 0; i < i_NP; i++) {		// ------Initialization-----------------------------
+    for (int i = 0; i < i_NP; i++) {		// ------Initialization-----------------------------
 	if (i_specinitialpop <= 0) { 		// random initial member 
-	    for (j = 0; j < i_D; j++) {
+	    for (int j = 0; j < i_D; j++) {
 		ta_popP.at(j,i) = fa_minbound[j] + ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 	    }
 	} else { 				// or user-specified initial member 
@@ -153,9 +154,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     ta_oldC = ta_popC;
   
     int i_iter = 0;				// ------Iteration loop--------------------------------------------
-    popcnt = 0;
-    bestacnt = 0;
-    i_xav = 1;
+    int popcnt = 0;
+    int i_xav = 1;
   
     while ((i_iter < i_itermax) && (t_bestC > VTR)) {    // main loop ====================================
 	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {  	// store intermediate populations
@@ -165,100 +165,96 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	d_bestmemit.col(i_iter) = t_bestP;	// store the best member
 	d_bestvalit[i_iter] = t_bestC;		// store the best value 
 	t_bestitP = t_bestP;
-	t_bestitC = t_bestC;
 	i_iter++;				// increase iteration counter
      
-	f_dither = f_weight + ::unif_rand() * (1.0 - f_weight);	// ----computer dithering factor -----------------
+	double f_dither = f_weight + ::unif_rand() * (1.0 - f_weight);	// ----computer dithering factor -----------------
       
 	if (i_strategy == 6) {			// ---DE/current-to-p-best/1 -----------------------------------------------------
 	    arma::colvec temp_oldC = ta_oldC;					// create a copy of ta_oldC to avoid changing it 
 	    rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );  	// sort temp_oldC to use sortIndex later 
 	}
 
-	for (i = 0; i < i_NP; i++) {		// ----start of loop through ensemble------------------------
+	for (int i = 0; i < i_NP; i++) {	// ----start of loop through ensemble------------------------
 
 	    t_tmpP = ta_oldP.col(i);		// t_tmpP is the vector to mutate and eventually select
-	    t_tmpC = ta_oldC[i];
+	    //double t_tmpC = ta_oldC[i];
 
 	    //permute(ia_urn2, i, ia_urntmp); 	// Pick 4 random and distinct 
 	    permute(ia_urn2.memptr(), urn_depth, i_NP, i, ia_urntmp.memptr()); // Pick 4 random and distinct 
-	    i_r1 = ia_urn2[1];  		// population members 
-	    i_r2 = ia_urn2[2];
-	    i_r3 = ia_urn2[3];
-	    i_r4 = ia_urn2[4];
-	    k = 0;				// loop counter used in all strategies below 
+	    int k = 0;				// loop counter used in all strategies below 
 
 	    // ===Choice of strategy=======================================================
 	    switch (i_strategy) {
 
-	    case 1:				// ---classical strategy DE/rand/1/bin-----------------------------------------
-		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+	    case 1: {				// ---classical strategy DE/rand/1/bin-----------------------------------------
+		int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
-		    t_tmpP[j] = ta_oldP.at(j,i_r1) + f_weight * (ta_oldP.at(j,i_r2) - ta_oldP.at(j,i_r3));
-		    j = (j + 1) % i_D;
-		} while ((::unif_rand() < f_cross) && (++k < i_D));
-		break;
-
-	    case 2:				// ---DE/local-to-best/1/bin---------------------------------------------------
-		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		do {				// add fluctuation to random target 
-		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(j,i_r2) - ta_oldP.at(j,i_r3));
-		    j = (j + 1) % i_D;
-		} while ((::unif_rand() < f_cross) && (++k < i_D));
-		break;
-
-	    case 3:				// ---DE/best/1/bin with jitter------------------------------------------------
-		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		do {				// add fluctuation to random target 
-		    f_jitter = 0.0001 * ::unif_rand() + f_weight; 
-		    t_tmpP[j] = t_bestitP[j] + f_jitter * (ta_oldP.at(j,i_r1) - ta_oldP.at(j,i_r2));
-		    j = (j + 1) % i_D;
-		} while ((::unif_rand() < f_cross) && (++k < i_D));
-		break;
-
-	    case 4:				// ---DE/rand/1/bin with per-vector-dither-------------------------------------
-		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		do {				// add fluctuation to random target *
-		    t_tmpP[j] = ta_oldP.at(j,i_r1) + (f_weight + ::unif_rand()*(1.0 - f_weight))* (ta_oldP.at(j,i_r2) - ta_oldP.at(j,i_r3));
-		    j = (j + 1) % i_D;
-		} while ((::unif_rand() < f_cross) && (++k < i_D));
-		break;
-
-	    case 5:				// ---DE/rand/1/bin with per-generation-dither---------------------------------
-		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		do {				// add fluctuation to random target 
-		    t_tmpP[j] = ta_oldP.at(j,i_r1) + f_dither * (ta_oldP.at(j,i_r2) - ta_oldP.at(j,i_r3));
-		    j = (j + 1) % i_D;
-		} while ((::unif_rand() < f_cross) && (++k < i_D));
-		break;
-
-	    case 6: {				// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
-		int i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
-		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		do {				// add fluctuation to random target 
-		    t_tmpP[j] = ta_oldP.at(j,i) + f_weight * (ta_oldP.at(j,i_pbest) - ta_oldP.at(j,i)) + f_weight * (ta_oldP.at(j,i_r1) - ta_oldP.at(j,i_r2));
+		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
 		    j = (j + 1) % i_D;
 		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
 	    }
-	    default:				// ---variation to DE/rand/1/bin: either-or-algorithm--------------------------
-		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+	    case 2: {				// ---DE/local-to-best/1/bin---------------------------------------------------
+		int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
+		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+		    j = (j + 1) % i_D;
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
+		break;
+	    }
+	    case 3: {				// ---DE/best/1/bin with jitter------------------------------------------------
+		int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
+		    double f_jitter = 0.0001 * ::unif_rand() + f_weight; 
+		    t_tmpP[j] = t_bestitP[j] + f_jitter * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
+		    j = (j + 1) % i_D;
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
+		break;
+	    }
+	    case 4: {				// ---DE/rand/1/bin with per-vector-dither-------------------------------------
+		int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target *
+		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + (f_weight + ::unif_rand()*(1.0 - f_weight))* (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+		    j = (j + 1) % i_D;
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
+		break;
+	    }
+	    case 5: {				// ---DE/rand/1/bin with per-generation-dither---------------------------------
+		int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
+		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_dither * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+		    j = (j + 1) % i_D;
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
+		break;
+	    }
+	    case 6: {				// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
+		int i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
+		int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
+		    t_tmpP[j] = ta_oldP.at(j,i) + f_weight * (ta_oldP.at(j,i_pbest) - ta_oldP.at(j,i)) + f_weight * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
+		    j = (j + 1) % i_D;
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
+		break;
+	    }
+	    default: {				// ---variation to DE/rand/1/bin: either-or-algorithm--------------------------
+		int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		if (::unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
 		    do {			// add fluctuation to random target */
-			t_tmpP[j] = ta_oldP.at(j,i_r1) + f_weight * (ta_oldP.at(j,i_r2) - ta_oldP.at(j,i_r3));
+			t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
 			j = (j + 1) % i_D;
 		    } while ((::unif_rand() < f_cross) && (++k < i_D));
 
 		} else { 			// recombination with K = 0.5*(F+1) -. F-K-Rule 
 		    do {			// add fluctuation to random target */
-			t_tmpP[j] = ta_oldP.at(j,i_r1) + 0.5 * (f_weight + 1.0) * (ta_oldP.at(j,i_r2) + ta_oldP.at(j,i_r3) - 2 * ta_oldP.at(j,i_r1));
+			t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + 0.5 * (f_weight + 1.0) * (ta_oldP.at(j,ia_urn2[2]) + ta_oldP.at(j,ia_urn2[3]) - 2 * ta_oldP.at(j,ia_urn2[1]));
 			j = (j + 1) % i_D;
 		    } while ((::unif_rand() < f_cross) && (++k < i_D));
 		}
 		break;
+	    }
 	    } // end switch (i_strategy) ...
 	
-	    for (j = 0; j < i_D; j++) {		// ----boundary constraints, bounce-back method was not enforcing bounds correctly
+	    for (int j = 0; j < i_D; j++) {		// ----boundary constraints, bounce-back method was not enforcing bounds correctly
 		if (t_tmpP[j] < fa_minbound[j]) {
 		    t_tmpP[j] = fa_minbound[j] + ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
 		}
@@ -268,7 +264,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 
 	    // ------Trial mutation now in t_tmpP-----------------
-	    t_tmpC = evaluate(l_nfeval, t_tmpP.memptr(), par, fcall, rho);	// Evaluate mutant in t_tmpP[]
+	    double t_tmpC = evaluate(l_nfeval, t_tmpP.memptr(), par, fcall, rho);	// Evaluate mutant in t_tmpP[]
 
 	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {	    		// i_bs_flag means that we will choose best NP vectors from old and new population later
 		ta_newP.col(i) = t_tmpP;				// replace target with mutant 
@@ -297,8 +293,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		step /= 2;   		// halve the step size 
 		for (bool done=false; ! done; ) {
 		    int bound  = i_len - step;
-		    for (j = 0; j < bound; j++) {
-			i = j + step + 1;
+		    for (int j = 0; j < bound; j++) {
+			int i = j + step + 1;
 			if (ta_popC[j] > ta_popC[i-1]) {
 			    ta_popP.swap_cols(i-1, j);
 			    ta_popC.swap_rows(i-1, j);
@@ -315,14 +311,15 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	ta_oldC = ta_newC;
 
 	if (i_check_winner)  {			// check if the best stayed the same, if necessary 
-	    same = 1;
-	    for (j = 0; j < i_D; j++)
+	    int same = 1;
+	    for (int j = 0; j < i_D; j++) {
 		if (t_bestitP[j] != t_bestP[j]) {
 		    same = 0;
 		}
+	    }
 	    if (same && i_iter > 1)  {
 		i_xav++;
-		tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);			// if re-evaluation of winner 
+		double tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);			// if re-evaluation of winner 
 		
 		if (i_av_winner)		//  possibly letting the winner be the average of all past generations 
 		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
@@ -333,11 +330,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 	}
 	t_bestitP = t_bestP;
-	t_bestitC = t_bestC;
 
 	if ( (i_trace > 0)  &&  ((i_iter % i_trace) == 0) ) {
 	    Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, t_bestC);
-	    for (j = 0; j < i_D; j++)
+	    for (int j = 0; j < i_D; j++)
 		Rprintf("%12.6f", t_bestP[j]);
 	    Rprintf("\n");
 	}
@@ -347,7 +343,6 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     i_iterations = i_iter;
 
     PutRNGstate();
-    //ProfilerStop();
 }
 
 inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[])

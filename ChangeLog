@@ -1,13 +1,15 @@
 2010-10-19  Dirk Eddelbuettel  <edd@debian.org>
 
-	* src/de4_0.cpp (DEoptimC):
-	  - Removed unused variable tempP
+	* src/de4_0.cpp:
+	  - Removed a few more unused variables
 	  - moved some variable declaration down to where they are use
 	  - turned one do-while into for(;;) loop
+	  - replaced macros with proper try/catch block
+	  - made a few more variables local
 
 2010-10-18  Dirk Eddelbuettel  <edd@debian.org>
 
-	* src/de4_0.cpp (DEoptimC):
+	* src/de4_0.cpp:
 	  - Switched from NP in rows to cols which with Armadillo's internal
   	    organisation gets a speed up for larger parameter vectors
 	    (starting around n=10)
