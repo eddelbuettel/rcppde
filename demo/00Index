@@ -1,1 +1,3 @@
 DEoptim         some examples of the DEoptim function.
+SmallBenchmark  repeated runs of RcppDE vs DEoption on small vectors
+LargeBenchmark  single runs of RcppDE vs DEoption on large vectors
