@@ -45,7 +45,7 @@ runPair <- function(n, maxIt, fun) {
 svnver <- system("svnversion", intern=TRUE)
 cat("# At ", format(Sys.time()), "\n# SVN ", svnver, "\n")
 
-reps <- c(2, 5, 20)
+reps <- c(5, 10, 20)
 
 res <- rbind(do.call(rbind, lapply(reps, runPair, maxIt, function(...) Rastrigin(...))),
              do.call(rbind, lapply(reps, runPair, maxIt, function(...) Wild(...))),

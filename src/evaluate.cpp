@@ -7,13 +7,21 @@
 
 #include <RcppArmadillo.h>
 
-//RcppExport double evaluate(long &l_nfeval, const arma::rowvec & param, SEXP parS, SEXP fcall, SEXP env) {
-RcppExport double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env) {
-    Rcpp::NumericVector par(parS); 			// access parS as numeric vector to fill it
-    //std::copy(param.begin(), param.end(), par.begin()); // STL way of copying
-    memcpy(par.begin(), param, par.size() * sizeof(double));
+// Slighly accelerated version of evaluate to evaluate function fcall with parameters param in environment env
+// Uses externally allocated par() vector into which param are copied
+//
+RcppExport double evaluate(long &l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP env) {
+    // -- safer approach: cast to NumericVector, fill it and eval
+    //Rcpp::NumericVector parvec(par); 			// access parS as numeric vector to fill it
+    //memcpy(parvec.begin(), param, parvec.size() * sizeof(double));
+    //SEXP fn = ::Rf_lang2(fcall, parvec); 			// this could be done with Rcpp 
+
+    // -- faster: direct access _assuming_ numeric vector
+    memcpy(REAL(par), param, Rf_nrows(par) * sizeof(double));
+
     SEXP fn = ::Rf_lang2(fcall, par); 			// this could be done with Rcpp 
     SEXP sexp_fvec = ::Rf_eval(fn, env);		// but is still a lot slower right now
+
     double f_result = Rcpp::as<double>(sexp_fvec);
     if (ISNAN(f_result)) 
 	::Rf_error("NaN value of objective function! \nPerhaps adjust the bounds.");
