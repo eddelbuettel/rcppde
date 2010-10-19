@@ -133,7 +133,6 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     if (i_specinitialpop > 0) {    		// if initial population provided, initialize with values 
 	initialpop = trans(initialpopm);	// transpose as we prefer columns for population members here
     }
-    //l_nfeval = 0;    				// already init'ed in main function
 
     for (i = 0; i < i_NP; i++) {		// ------Initialization-----------------------------
 	if (i_specinitialpop <= 0) { 		// random initial member 
@@ -190,20 +189,20 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    k = 0;				// loop counter used in all strategies below 
 
 	    // ===Choice of strategy=======================================================
-	    switch (i_strategy) { 		// and putting default value one first
-
-	    case 2:				// ---DE/local-to-best/1/bin---------------------------------------------------
-		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		do {				// add fluctuation to random target 
-		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(j,i_r2) - ta_oldP.at(j,i_r3));
-		    j = (j + 1) % i_D;
-		} while ((::unif_rand() < f_cross) && (++k < i_D));
-		break;
+	    switch (i_strategy) {
 
 	    case 1:				// ---classical strategy DE/rand/1/bin-----------------------------------------
 		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(j,i_r1) + f_weight * (ta_oldP.at(j,i_r2) - ta_oldP.at(j,i_r3));
+		    j = (j + 1) % i_D;
+		} while ((::unif_rand() < f_cross) && (++k < i_D));
+		break;
+
+	    case 2:				// ---DE/local-to-best/1/bin---------------------------------------------------
+		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
+		do {				// add fluctuation to random target 
+		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(j,i_r2) - ta_oldP.at(j,i_r3));
 		    j = (j + 1) % i_D;
 		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
