@@ -1,6 +1,33 @@
+2010-10-19  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/de4_0.cpp (DEoptimC):
+	  - Removed unused variable tempP
+	  - moved some variable declaration down to where they are use
+	  - turned one do-while into for(;;) loop
+
+2010-10-18  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/de4_0.cpp (DEoptimC):
+	  - Switched from NP in rows to cols which with Armadillo's internal
+  	    organisation gets a speed up for larger parameter vectors
+	    (starting around n=10)
+	  - d_storepop is now a Rcpp::List, filled directly with matrices
+	  - the strategy if/elseif/else tree is now a switch()
+	  - use static_cast<int>(::unif_rand())
+	  - use ::unif_rand() to show this is a 'global' R namespace object
+	* R/DEoptim.R: No longer need to create list of populations by hand
+
+	* src/evaluate.cpp: Simplied using REAL() to get to pointer
+	* demo/SmallBenchmark.R: Added
+	* demo/LargeBenchmark.R: Added
+
 2010-10-16  Dirk Eddelbuettel  <edd@debian.org>
 
-	* src/de4_0.cpp: converted to Armadillo use throughout
+	* src/de4_0.cpp:
+	  - converted to Armadillo use throughout
+	  - initialpop is a matrix (not vector) on entry
+	  - d_pop is a matrix too
+	  - removed a number of 'element copying' loop
 
 	* R/DEoptim.R: changed to send and receive matrices rather than
 	  vectors that need to be recast to matrix

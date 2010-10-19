@@ -7,7 +7,7 @@
 // and based on DE-Engine v4.0, Rainer Storn, 2004  
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
-#include <RcppArmadillo.h>
+#include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
 //#include <google/profiler.h>
 
 RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho);
@@ -18,7 +18,7 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::colvec & t_bestP, 
 	   arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double       & t_bestC,	
-           arma::colvec & t_bestitP, arma::colvec & t_tmpP, arma::colvec & tempP,
+           arma::colvec & t_bestitP, arma::colvec & t_tmpP, //arma::colvec & tempP,
            arma::mat & d_pop, Rcpp::List & d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
@@ -28,15 +28,15 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
     //ProfilerStart("/tmp/RcppDE.prof");
     BEGIN_RCPP ;	// macro to fill in try part of try/catch exception handler
 
-    Rcpp::Function fn(fnS);						// function to mininise
-    Rcpp::Environment rho(rhoS); 					// environment to do it in
+    Rcpp::Function      fn(fnS);					// function to mininise
+    Rcpp::Environment   rho(rhoS); 					// environment to do it in
     Rcpp::NumericVector f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
     Rcpp::List          control(controlS); 				// named list of params
 
     double VTR           = Rcpp::as<double>(control["VTR"]);		// value to reach
     int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
     int i_itermax        = Rcpp::as<int>(control["itermax"]);		// Maximum number of generations
-    long l_nfeval        = 0;//Rcpp::as<int>(control["nfeval"]);	// number of function evaluations    
+    long l_nfeval        = 0;//Rcpp::as<int>(control["nfeval"]);	// number of function evaluations (NOT passed in)
     int i_D              = Rcpp::as<int>(control["npar"]);		// Dimension of parameter vector
     int i_NP             = Rcpp::as<int>(control["NP"]);		// Number of population members
     int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
@@ -67,7 +67,6 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 
     arma::colvec t_bestitP(i_D);
     arma::colvec t_tmpP(i_D); 
-    arma::colvec tempP(i_D);
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     arma::mat d_pop(i_D, i_NP); 
@@ -79,7 +78,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
     // call actual Differential Evolution optimization given the parameters
     devol(VTR, f_weight, f_cross, i_bs_flag, minbound, maxbound, Rcpp::wrap(fn), Rcpp::wrap(rho), i_trace,
 	  i_strategy, i_D, i_NP, i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
-	  ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP, tempP,
+	  ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP,
 	  d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
 
     // and return a named list to R
@@ -101,7 +100,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	   int i_storepopfrom, int i_storepopfreq, int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, arma::colvec & t_bestP, 
            arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double & t_bestC,
-           arma::colvec & t_bestitP, arma::colvec & t_tmpP, arma::colvec & tempP,
+           arma::colvec & t_bestitP, arma::colvec & t_tmpP, 
            arma::mat &d_pop, Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
@@ -114,17 +113,14 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
     int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
     int i_xav, popcnt, bestacnt, same; 		// lazy cnters 
-    double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best; // , tempC 
+    double f_jitter, f_dither, t_bestitC, t_tmpC, tmp_best; 
     
     arma::mat initialpop(i_D, i_NP); 
 
-    int i_pbest;    				// vars for DE/current-to-p-best/1 
     int p_NP = round(i_pPct * i_NP);  		// choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
     arma::icolvec sortIndex(i_NP); 		// sorted values of ta_oldC 
-    for(i = 0; i < i_NP; i++) sortIndex[i] = i;
-
-    int i_len, done, step, bound;    		// vars for when i_bs_flag == 1 */
+    for(i = 0; i < i_NP; i++) sortIndex[i] = i; // FIXME: does this really need to get filled here?
 
     GetRNGstate();
 
@@ -238,7 +234,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		break;
 
 	    case 6:				// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
-		i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
+		int i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
 		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
 		    t_tmpP[j] = ta_oldP.at(j,i) + f_weight * (ta_oldP.at(j,i_pbest) - ta_oldP.at(j,i)) + f_weight * (ta_oldP.at(j,i_r1) - ta_oldP.at(j,i_r2));
@@ -296,22 +292,21 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    ta_popP.rows(i_NP, 2*i_NP-1) = ta_newP;
 	    ta_popC.rows(i_NP, 2*i_NP-1) = ta_newC;
 
-	    i_len = 2 * i_NP;
-	    step = i_len;  		// array length 
+	    int i_len = 2 * i_NP;
+	    int step = i_len;  		// array length 
 	    while (step > 1) {
 		step /= 2;   		// halve the step size 
-		do {
-		    done = 1;
-		    bound  = i_len - step;
+		for (bool done=false; ! done; ) {
+		    int bound  = i_len - step;
 		    for (j = 0; j < bound; j++) {
 			i = j + step + 1;
 			if (ta_popC[j] > ta_popC[i-1]) {
 			    ta_popP.swap_cols(i-1, j);
 			    ta_popC.swap_rows(i-1, j);
-			    done = 0; 
+			    done = true; 
 			}  // if 
 		    }  // for 
-		} while (!done);   // do .. while 
+		} // for (!done)
 	    } // while (step > 1) 
 	    ta_newP = ta_popP;			// now the best NP are in first NP places in gta_pop, use them
 	    ta_newC = ta_popC;
