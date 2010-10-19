@@ -233,7 +233,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
 
-	    case 6:				// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
+	    case 6: {				// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
 		int i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
 		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		do {				// add fluctuation to random target 
@@ -241,7 +241,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		    j = (j + 1) % i_D;
 		} while ((::unif_rand() < f_cross) && (++k < i_D));
 		break;
-
+	    }
 	    default:				// ---variation to DE/rand/1/bin: either-or-algorithm--------------------------
 		j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
 		if (::unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
