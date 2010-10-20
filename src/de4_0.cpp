@@ -8,7 +8,7 @@
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
 #include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
-#include <google/profiler.h>
+//#include <google/profiler.h>
 
 RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho);
 void devol(double VTR, double f_weight, double fcross, int i_bs_flag, 
@@ -150,8 +150,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	}
     }
 
-    ta_oldP = ta_popP;				// ---assign pointers to current ("old") population---
-    ta_oldC = ta_popC;
+    ta_oldP = ta_popP.cols(0, i_NP-1);		// ---assign pointers to current ("old") population---
+    ta_oldC = ta_popC.rows(0, i_NP-1);
   
     int i_iter = 0;				// ------Iteration loop--------------------------------------------
     int popcnt = 0;
@@ -161,7 +161,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {  	// store intermediate populations
 	    d_storepop[popcnt++] = Rcpp::wrap( trans(ta_oldP) );
 	} // end store pop 
-      
+
 	d_bestmemit.col(i_iter) = t_bestP;	// store the best member
 	d_bestvalit[i_iter] = t_bestC;		// store the best value 
 	t_bestitP = t_bestP;
@@ -281,10 +281,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 	if (i_bs_flag) {	// examine old and new pop. and take the best NP members into next generation 
 	    
-	    ta_popP.rows(0, i_NP-1) = ta_oldP;
+	    ta_popP.cols(0, i_NP-1) = ta_oldP;
 	    ta_popC.rows(0, i_NP-1) = ta_oldC;
 
-	    ta_popP.rows(i_NP, 2*i_NP-1) = ta_newP;
+	    ta_popP.cols(i_NP, 2*i_NP-1) = ta_newP;
 	    ta_popC.rows(i_NP, 2*i_NP-1) = ta_newC;
 
 	    int i_len = 2 * i_NP;
@@ -296,15 +296,15 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		    for (int j = 0; j < bound; j++) {
 			int i = j + step + 1;
 			if (ta_popC[j] > ta_popC[i-1]) {
-			    ta_popP.swap_cols(i-1, j);
-			    ta_popC.swap_rows(i-1, j);
+			    ta_popP.swap_cols(j, i-1);
+			    ta_popC.swap_rows(j, i-1);
 			    done = true; 
 			}  // if 
 		    }  // for 
 		} // for (!done)
 	    } // while (step > 1) 
-	    ta_newP = ta_popP;			// now the best NP are in first NP places in gta_pop, use them
-	    ta_newC = ta_popC;
+	    ta_newP = ta_popP.cols(0, i_NP-1);	// now the best NP are in first NP places in gta_pop, use them
+	    ta_newC = ta_popC.rows(0, i_NP-1);
 	} // i_bs_flag
 
 	ta_oldP = ta_newP;			// have selected NP mutants move on to next generation 
