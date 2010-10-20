@@ -1,5 +1,9 @@
 2010-10-19  Dirk Eddelbuettel  <edd@debian.org>
 
+	* R/DEoptim.R:
+	  - reduce storepop list by one to match DEoptim behaviour
+	  - set row and column names
+
 	* src/de4_0.cpp:
 	  - Removed a few more unused variables
 	  - moved some variable declaration down to where they are use
