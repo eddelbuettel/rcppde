@@ -35,7 +35,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 	double VTR           = Rcpp::as<double>(control["VTR"]);	// value to reach
 	int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
 	int i_itermax        = Rcpp::as<int>(control["itermax"]);	// Maximum number of generations
-	long l_nfeval        = 0;//Rcpp::as<int>(control["nfeval"]);	// number of function evaluations (NOT passed in)
+	long l_nfeval        = 0;					// number of function evaluations (NOT passed in)
 	int i_D              = Rcpp::as<int>(control["npar"]);		// Dimension of parameter vector
 	int i_NP             = Rcpp::as<int>(control["NP"]);		// Number of population members
 	int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
@@ -59,7 +59,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 	arma::mat ta_newP(i_D, i_NP);
 	arma::colvec t_bestP(i_D); 
 
-	arma::colvec ta_popC(i_NP*2);  				    	// Data structures for obj. fun. values associated with par. vectors 
+	arma::colvec ta_popC(i_NP*2);  				    	// Data structures for obj. fun. values 
 	arma::colvec ta_oldC(i_NP);
 	arma::colvec ta_newC(i_NP);
 	double t_bestC; 
@@ -80,7 +80,7 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 	      ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP,
 	      d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
 
-	// and return a named list to R
+	// and create a named list to return to R
 	Rcpp::List rv = Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,
 					   Rcpp::Named("bestval")   = t_bestC,
 					   Rcpp::Named("nfeval")    = l_nfeval,
