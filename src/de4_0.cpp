@@ -18,11 +18,10 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            int i_specinitialpop, int i_check_winner, int i_av_winner,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::colvec & t_bestP, 
 	   arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double       & t_bestC,	
-           arma::colvec & t_bestitP, arma::colvec & t_tmpP, //arma::colvec & tempP,
-           arma::mat & d_pop, Rcpp::List & d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
-           int & i_iterations, double i_pPct, long & l_nfeval);
+           arma::colvec & t_bestitP, arma::colvec & t_tmpP, arma::mat & d_pop, Rcpp::List & d_storepop, 
+	   arma::mat & d_bestmemit, arma::colvec & d_bestvalit, int & i_iterations, double i_pPct, long & l_nfeval);
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
-RcppExport double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env);
+double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env);
 
 RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     
@@ -121,8 +120,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     int p_NP = round(i_pPct * i_NP);  		// choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
     arma::icolvec sortIndex(i_NP); 		// sorted values of ta_oldC 
-    //for(int i = 0; i < i_NP; i++) sortIndex[i] = i; // FIXME: does this really need to get filled here?
-
+    if (i_strategy == 6) {
+	for (int i = 0; i < i_NP; i++) 
+	    sortIndex[i] = i; 
+    }
     GetRNGstate();
 
     initialpop.zeros();		 		// initialize initial popuplation 
@@ -288,20 +289,21 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    ta_popC.rows(i_NP, 2*i_NP-1) = ta_newC;
 
 	    int i_len = 2 * i_NP;
-	    int step = i_len;  		// array length 
+	    int step = i_len, done;	// array length 
 	    while (step > 1) {
 		step /= 2;   		// halve the step size 
-		for (bool done=false; ! done; ) {
+		do {
+		    done = 1;
 		    int bound  = i_len - step;
 		    for (int j = 0; j < bound; j++) {
 			int i = j + step + 1;
 			if (ta_popC[j] > ta_popC[i-1]) {
 			    ta_popP.swap_cols(j, i-1);
 			    ta_popC.swap_rows(j, i-1);
-			    done = true; 
+			    done = 0;
 			}  // if 
 		    }  // for 
-		} // for (!done)
+		} while (!done); // while
 	    } // while (step > 1) 
 	    ta_newP = ta_popP.cols(0, i_NP-1);	// now the best NP are in first NP places in gta_pop, use them
 	    ta_newC = ta_popC.rows(0, i_NP-1);
@@ -319,10 +321,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 	    if (same && i_iter > 1)  {
 		i_xav++;
-		double tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);			// if re-evaluation of winner 
+		double tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);	// if re-evaluation of winner 
 		
 		if (i_av_winner)		//  possibly letting the winner be the average of all past generations 
-		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
+		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + 
+			(d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
 		else
 		    t_bestC = tmp_best;
 	    } else {

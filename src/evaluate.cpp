@@ -10,7 +10,7 @@
 // Slighly accelerated version of evaluate to evaluate function fcall with parameters param in environment env
 // Uses externally allocated par() vector into which param are copied
 //
-RcppExport double evaluate(long &l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP env) {
+double evaluate(long &l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP env) {
     // -- safer approach: cast to NumericVector, fill it and eval
     //Rcpp::NumericVector parvec(par); 			// access parS as numeric vector to fill it
     //memcpy(parvec.begin(), param, parvec.size() * sizeof(double));
