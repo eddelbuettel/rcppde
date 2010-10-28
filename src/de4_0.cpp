@@ -8,9 +8,8 @@
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
 #include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
-//#include <google/profiler.h>
+// #include <google/profiler.h>
 
-RcppExport SEXP DEoptimC(SEXP lower, SEXP upper, SEXP fn, SEXP control, SEXP rho);
 void devol(double VTR, double f_weight, double fcross, int i_bs_flag, 
            arma::colvec & lower, arma::colvec & upper, SEXP fcall, SEXP rho, int i_trace,
            int i_strategy, int i_D, int i_NP, int i_itermax,
@@ -26,11 +25,10 @@ double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP
 RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     
     try {
-	//ProfilerStart("/tmp/RcppDE.prof");
-	Rcpp::Function      fn(fnS);					// function to mininise
-	Rcpp::Environment   rho(rhoS); 					// environment to do it in
 	Rcpp::NumericVector f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
+	Rcpp::Function      fn(fnS);					// function to mininise
 	Rcpp::List          control(controlS); 				// named list of params
+	Rcpp::Environment   rho(rhoS); 					// environment to do it in
 
 	double VTR           = Rcpp::as<double>(control["VTR"]);	// value to reach
 	int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
@@ -80,23 +78,20 @@ RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP
 	      ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP,
 	      d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
 
-	// and create a named list to return to R
-	Rcpp::List rv = Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,
-					   Rcpp::Named("bestval")   = t_bestC,
-					   Rcpp::Named("nfeval")    = l_nfeval,
-					   Rcpp::Named("iter")      = i_iter,
-					   Rcpp::Named("bestmemit") = trans(d_bestmemit),
-					   Rcpp::Named("bestvalit") = d_bestvalit,
-					   Rcpp::Named("pop")       = trans(d_pop),
-					   Rcpp::Named("storepop")  = d_storepop); 
-	//ProfilerStop();
-	return rv;
+	return Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,	// and return a named list with results to R
+				  Rcpp::Named("bestval")   = t_bestC,
+				  Rcpp::Named("nfeval")    = l_nfeval,
+				  Rcpp::Named("iter")      = i_iter,
+				  Rcpp::Named("bestmemit") = trans(d_bestmemit),
+				  Rcpp::Named("bestvalit") = d_bestvalit,
+				  Rcpp::Named("pop")       = trans(d_pop),
+				  Rcpp::Named("storepop")  = d_storepop); 
+
     } catch( std::exception& ex) { 
 	forward_exception_to_r(ex); 
     } catch(...) { 
 	::Rf_error( "c++ exception (unknown reason)"); 
     }
-
     return R_NilValue;
 }
 
@@ -111,6 +106,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::mat &d_pop, Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
+    //ProfilerStart("/tmp/RcppDE.prof");
     const int urn_depth = 5;   			// 4 + one index to avoid 
     Rcpp::NumericVector par(i_D);		// initialize parameter vector to pass to evaluate function 
     arma::icolvec::fixed<urn_depth> ia_urn2; 	// fixed-size vector for urn draws
@@ -178,9 +174,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	for (int i = 0; i < i_NP; i++) {	// ----start of loop through ensemble------------------------
 
 	    t_tmpP = ta_oldP.col(i);		// t_tmpP is the vector to mutate and eventually select
-	    //double t_tmpC = ta_oldC[i];
 
-	    //permute(ia_urn2, i, ia_urntmp); 	// Pick 4 random and distinct 
 	    permute(ia_urn2.memptr(), urn_depth, i_NP, i, ia_urntmp.memptr()); // Pick 4 random and distinct 
 	    int k = 0;				// loop counter used in all strategies below 
 
@@ -266,7 +260,6 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 	    // ------Trial mutation now in t_tmpP-----------------
 	    double t_tmpC = evaluate(l_nfeval, t_tmpP.memptr(), par, fcall, rho);	// Evaluate mutant in t_tmpP[]
-
 	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {	    		// i_bs_flag means that we will choose best NP vectors from old and new population later
 		ta_newP.col(i) = t_tmpP;				// replace target with mutant 
 		ta_newC[i] = t_tmpC;
@@ -345,31 +338,29 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     d_pop = ta_oldP;
     i_iterations = i_iter;
 
-    PutRNGstate();
+    PutRNGstate();   
+    // ProfilerStop();
 }
 
-inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[])
-/********************************************************************
- ** Function       : void permute(int ia_urn2[], int i_urn2_depth)
- ** Author         : Rainer Storn (w/bug fixes contributed by DEoptim users)
- ** Description    : Generates i_urn2_depth random indices ex [0, i_NP-1]
- **                  which are all distinct. This is done by using a
- **                  permutation algorithm called the "urn algorithm"
- **                  which goes back to C.L.Robinson.
- ** Functions      : -
- ** Globals        : -
- ** Parameters     : ia_urn2       (O)    array containing the random indices
- **                  i_urn2_depth  (I)    number of random indices (avoided index included)
- **                  i_NP          (I)    range of indices is [0, i_NP-1]
- **                  i_avoid       (I)    is the index to avoid and is located in
- **                                       ia_urn2[0].
- ** Preconditions  : # Make sure that ia_urn2[] has a length of i_urn2_depth.
- **                  # i_urn2_depth must be smaller than i_NP.
- ** Postconditions : # the index to be avoided is in ia_urn2[0], so fetch the
- **                   indices from ia_urn2[i], i = 1, 2, 3, ..., i_urn2_depth.
- ** Return Value   : -
- *********************************************************************/
-{
+// Function       : void permute(int ia_urn2[], int i_urn2_depth)
+// Author         : Rainer Storn (w/bug fixes contributed by DEoptim users)
+// Description    : Generates i_urn2_depth random indices ex [0, i_NP-1]
+//                  which are all distinct. This is done by using a
+//                  permutation algorithm called the "urn algorithm"
+//                  which goes back to C.L.Robinson.
+// Functions      : -
+// Globals        : -
+// Parameters     : ia_urn2       (O)    array containing the random indices
+//                  i_urn2_depth  (I)    number of random indices (avoided index included)
+//                  i_NP          (I)    range of indices is [0, i_NP-1]
+//                  i_avoid       (I)    is the index to avoid and is located in ia_urn2[0].
+//                  ia_urn1       (I)    additional temp vector
+// Preconditions  : # Make sure that ia_urn2[] has a length of i_urn2_depth.
+//                  # i_urn2_depth must be smaller than i_NP.
+// Postconditions : # the index to be avoided is in ia_urn2[0], so fetch the
+//                   indices from ia_urn2[i], i = 1, 2, 3, ..., i_urn2_depth.
+// Return Value   : -
+inline void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[]) {
     GetRNGstate();
     int k = i_NP;
     int i_urn1 = 0;
