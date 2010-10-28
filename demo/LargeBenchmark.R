@@ -42,7 +42,7 @@ demo.LargeBenchmark  <- function() {
         return(data.frame(DEoptim=bt, RcppDE=ct))
     }
 
-    cat("# At ", format(Sys.time()), "\n")
+    cat("# At", format(Sys.time()), "\n")
 
     reps <- c(50, 100, 200)
 
@@ -61,7 +61,7 @@ demo.LargeBenchmark  <- function() {
     res$pctGainOfRcpp <- (1-res[,2]/res[,1])*100
 
     print(res)
-    cat("# Done ", format(Sys.time()), "\n")
+    cat("# Done", format(Sys.time()), "\n")
 }
 
 demo.LargeBenchmark()
