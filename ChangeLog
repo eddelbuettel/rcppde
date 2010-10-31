@@ -1,5 +1,8 @@
 2010-10-30  Dirk Eddelbuettel  <edd@debian.org>
 
+	* src/deoptim.cpp: Renamed from de4_0.cpp; function renamed DEoptim
+	* R/DEoptim.R: Call renamed function "DEoptim"
+
 	* src/devol.cpp: Split function devol() off into its own file
 	* src/permute.cpp: Split function devol() off into its own file
 

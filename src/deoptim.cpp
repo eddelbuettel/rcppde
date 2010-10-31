@@ -20,7 +20,7 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            arma::colvec & t_bestitP, arma::colvec & t_tmpP, arma::mat & d_pop, Rcpp::List & d_storepop, 
 	   arma::mat & d_bestmemit, arma::colvec & d_bestvalit, int & i_iterations, double i_pPct, long & l_nfeval);
 
-RcppExport SEXP DEoptimC(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
+RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     
     try {
 	Rcpp::NumericVector f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
