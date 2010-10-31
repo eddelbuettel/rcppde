@@ -5,6 +5,7 @@
 //
 // DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
 
+#ifndef USE_OPENMP
 #include <RcppArmadillo.h>
 
 // Slighly accelerated version of evaluate to evaluate function fcall with parameters param in environment env
@@ -19,5 +20,4 @@ double evaluate(long &l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP 
     l_nfeval++;  						   // increment function evaluation count 
     return(f_result); 
 }
-
-
+#endif 
