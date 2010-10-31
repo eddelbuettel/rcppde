@@ -12,7 +12,7 @@ Genrose <- function(x) { 	## One generalization of the Rosenbrock banana valley 
 
 
 maxIt <- 500                           # not excessive but so that we get some run-time on simple problems
-n <- 20
+n <- 40
 
 set.seed(42)
 print(system.time( {

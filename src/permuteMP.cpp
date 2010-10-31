@@ -30,7 +30,7 @@
 //                   indices from ia_urn2[i], i = 1, 2, 3, ..., i_urn2_depth.
 // Return Value   : -
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[]) {
-    GetRNGstate();
+    //GetRNGstate();
     int i_urn1 = 0, i_urn2 = 0, k = i_NP;
     for (int i = 0; i < i_NP; i++)
 	ia_urn1[i] = i; 		   /* initialize urn1 */
@@ -43,8 +43,8 @@ void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1
 	//k = k - 1;                         /* reduce number of accessible indices */
 	i_urn2 = i_urn2 + 1;               /* next position in urn2 */
 	//i_urn1 = static_cast<int>(::unif_rand() * k);   /* choose a random index */
-	i_urn1 = static_cast<int>(::unif_rand() * (k-1));   /* choose a random index */
+	i_urn1 = static_cast<int>(arma::randu() * (k-1));   /* choose a random index */
     }
-    PutRNGstate();
+    //PutRNGstate();
 }
 #endif

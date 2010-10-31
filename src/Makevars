@@ -1,9 +1,11 @@
+## Hey Emacs make this a -*- mode: makefile; -*- file 
+##
 ## -- for OpenMP (with -D macro to switch to OpenMP enabled source file)
-## PKG_CXXFLAGS=-fopenmp -DUSE_OPENMP
-## PKG_LIBS= -fopenmp -lgomp $(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+PKG_CXXFLAGS=-fopenmp -DUSE_OPENMP
+PKG_LIBS= -fopenmp -lgomp $(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 ##
 ## -- for Google Perftools profiling
 ## PKG_LIBS= $(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -lprofiler
 ##
 ## -- default
-PKG_LIBS= $(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
+#PKG_LIBS= $(shell $(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()") $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
