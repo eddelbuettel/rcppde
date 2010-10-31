@@ -1,3 +1,29 @@
+2010-10-30  Dirk Eddelbuettel  <edd@debian.org>
+
+	* profile.r: Simple front-end script used for profiling runs
+
+	* src/evaluate.cpp: Slight performance increase and simplification
+
+	* benchmark.txt: Updated benchmark results, including one on OS X
+
+2010-10-30  Dirk Eddelbuettel  <edd@debian.org>
+
+	* benchmark.r: Now calls demo/benchmark.r, minor edits
+	* bigBenchmark.r: Now calls demo/bigBenchmark.r, minor edits
+
+2010-10-27  Dirk Eddelbuettel  <edd@debian.org>
+
+	* benchmark.txt: Updated benchmark results, including one on OS X
+	* src/de4_0.cpp: Minor edits
+
+2010-10-26  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/de4_0.cpp:
+	  - corrected sortindex error for strat=6
+	  - corrected inner loop when bs=TRUE
+
+	* DESCRIPTION: explicit Depends: on RcppArmadillo (>= 0.2.8)
+	
 2010-10-19  Dirk Eddelbuettel  <edd@debian.org>
 
 	* R/DEoptim.R:

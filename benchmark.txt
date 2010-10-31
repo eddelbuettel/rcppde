@@ -511,3 +511,42 @@ Genrose100     6.188  5.877          0.94974        5.0259
 Genrose200    16.828 15.397          0.91496        8.5037
 MEANS         11.212 10.543          0.94037        5.9629
 # Done  2010-10-27 21:56:24.62256  
+
+
+romain@ ~/svn/rcpp/pkg/RcppDE/demo $ Rscript SmallBenchmark.R
+
+DEoptim package
+Differential Evolution algorithm in R
+Authors: David Ardia and Katharine Mullen
+# At 2010-10-30 09:37:15
+               DEoptim   RcppDE ratioRcppToBasic pctGainOfRcpp
+Rastrigin5  0.1173750 0.120375        1.0255591   -2.55591054
+Rastrigin10 0.2581250 0.261250        1.0121065   -1.21065375
+Rastrigin20 0.6117500 0.606875        0.9920311    0.79689416
+Wild5       0.1786250 0.202125        1.1315605  -13.15605318
+Wild10      0.4220000 0.398500        0.9443128    5.56872038
+Wild20      1.0581250 1.052500        0.9946840    0.53160071
+Genrose5    0.2046250 0.205125        1.0024435   -0.24434942
+Genrose10   0.4595000 0.461875        1.0051687   -0.51686616
+Genrose20   1.1097500 1.110375        1.0005632   -0.05631899
+MEANS       0.4910972 0.491000        0.9998020    0.01979694
+# Done 2010-10-30 09:38:50
+romain@ ~/svn/rcpp/pkg/RcppDE/demo $
+romain@ ~/svn/rcpp/pkg/RcppDE/demo $ Rscript LargeBenchmark.R
+
+DEoptim package
+Differential Evolution algorithm in R
+Authors: David Ardia and Katharine Mullen
+# At 2010-10-30 09:40:05
+               DEoptim   RcppDE ratioRcppToBasic pctGainOfRcpp
+Rastrigin50   1.95600  1.98900        1.0168712    -1.6871166
+Rastrigin100  5.25200  4.91900        0.9365956     6.3404417
+Rastrigin200 14.20800 12.30900        0.8663429    13.3657095
+Wild50        3.42000  3.44800        1.0081871    -0.8187135
+Wild100       9.03800  9.18800        1.0165966    -1.6596592
+Wild200      25.81700 28.24300        1.0939691    -9.3969090
+Genrose50     4.11200  3.70900        0.9019942     9.8005837
+Genrose100    8.97200  8.83100        0.9842844     1.5715560
+Genrose200   24.69300 26.59400        1.0769854    -7.6985380
+MEANS        10.82978 11.02556        1.0180777    -1.8077728
+# Done 2010-10-30 09:43:23
