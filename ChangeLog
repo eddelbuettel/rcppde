@@ -1,3 +1,18 @@
+2010-10-31  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/Makevars: add new define for compilation with OpenMP
+
+	* src/devolMP.cpp: New OpenMP-using variants -- with issues as we
+	cannot simple multithread around the single-threaded R instance
+	* src/permuteMP.cpp: New OpenMP-using variant -- without actual
+	speedup as the task in the permutation loop is so simple that the
+	multithreading overhead eats any parallelisation gains
+
+	* src/devol.cpp: Added #ifdef to disable if OpenMP is used
+	* src/permute.cpp: Added #ifdef to disable if OpenMP is used
+
+	* openmp.r: Added test script for OpenMP usage
+
 2010-10-30  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/deoptim.cpp: Renamed from de4_0.cpp; function renamed DEoptim

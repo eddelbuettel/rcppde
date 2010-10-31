@@ -7,8 +7,9 @@
 // and based on DE-Engine v4.0, Rainer Storn, 2004  
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
-#ifndef USE_OPENMP
-#include <RcppArmadillo.h>
+#ifdef USE_OPENMP
+#include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
+#include <omp.h>		// OpenMP for compiler-generated multithreading
 
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env);
@@ -71,7 +72,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     int popcnt = 0;
     int i_xav = 1;
   
-    while ((i_iter < i_itermax) && (t_bestC > VTR)) {    // main loop ====================================
+    for (i_iter=0; (i_iter < i_itermax) && (t_bestC > VTR); i_iter++) { // main loop ====================================
 	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {  	// store intermediate populations
 	    d_storepop[popcnt++] = Rcpp::wrap( trans(ta_oldP) );
 	} // end store pop 
@@ -79,7 +80,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	d_bestmemit.col(i_iter) = t_bestP;	// store the best member
 	d_bestvalit[i_iter] = t_bestC;		// store the best value 
 	t_bestitP = t_bestP;
-	i_iter++;				// increase iteration counter
+	//i_iter++;				// increase iteration counter
      
 	double f_dither = f_weight + ::unif_rand() * (1.0 - f_weight);	// ----computer dithering factor -----------------
       
@@ -88,6 +89,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );  	// sort temp_oldC to use sortIndex later 
 	}
 
+#pragma omp parallel for shared(ta_oldP,ta_newP,ta_newC,t_tmpP) private(i) schedule(dynamic)
 	for (int i = 0; i < i_NP; i++) {	// ----start of loop through ensemble------------------------
 
 	    t_tmpP = ta_oldP.col(i);		// t_tmpP is the vector to mutate and eventually select

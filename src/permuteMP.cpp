@@ -7,8 +7,9 @@
 // and based on DE-Engine v4.0, Rainer Storn, 2004  
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
-#ifndef USE_OPENMP
-#include <RcppArmadillo.h>
+#ifdef USE_OPENMP
+#include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
+#include <omp.h>		// OpenMP for compiler-generated multithreading
 
 // Function       : void permute(int ia_urn2[], int i_urn2_depth)
 // Author         : Rainer Storn (w/bug fixes contributed by DEoptim users)
@@ -30,19 +31,19 @@
 // Return Value   : -
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[]) {
     GetRNGstate();
-    int k = i_NP;
-    int i_urn1 = 0;
-    int i_urn2 = 0;
+    int i_urn1 = 0, i_urn2 = 0, k = i_NP;
     for (int i = 0; i < i_NP; i++)
 	ia_urn1[i] = i; 		   /* initialize urn1 */
-
     i_urn1 = i_avoid;                      /* get rid of the index to be avoided and place it in position 0. */
-    while (k > i_NP - i_urn2_depth) {      /* i_urn2_depth is the amount of indices wanted (must be <= NP) */
+    // too simple pragma omp parallel for shared(ia_urn2,ia_urn1,i_urn1,i_urn2) private(k) schedule(static)
+    // WORKS pragma omp parallel for shared(ia_urn2) private(k) schedule(dynamic)
+    for (k = i_NP; k > i_NP - i_urn2_depth; k--) {
 	ia_urn2[i_urn2] = ia_urn1[i_urn1]; /* move it into urn2 */
 	ia_urn1[i_urn1] = ia_urn1[k-1];    /* move highest index to fill gap */
-	k = k - 1;                         /* reduce number of accessible indices */
+	//k = k - 1;                         /* reduce number of accessible indices */
 	i_urn2 = i_urn2 + 1;               /* next position in urn2 */
-	i_urn1 = static_cast<int>(::unif_rand() * k);   /* choose a random index */
+	//i_urn1 = static_cast<int>(::unif_rand() * k);   /* choose a random index */
+	i_urn1 = static_cast<int>(::unif_rand() * (k-1));   /* choose a random index */
     }
     PutRNGstate();
 }
