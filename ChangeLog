@@ -1,5 +1,8 @@
 2010-10-30  Dirk Eddelbuettel  <edd@debian.org>
 
+	* src/devol.cpp: Split function devol() off into its own file
+	* src/permute.cpp: Split function devol() off into its own file
+
 	* profile.r: Simple front-end script used for profiling runs
 
 	* src/evaluate.cpp: Slight performance increase and simplification
