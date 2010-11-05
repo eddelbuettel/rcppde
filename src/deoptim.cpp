@@ -23,15 +23,13 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
 RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     
     try {
-	Rcpp::NumericVector f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
-	Rcpp::Function      fn(fnS);					// function to mininise
-	Rcpp::List          control(controlS); 				// named list of params
-	Rcpp::Environment   rho(rhoS); 					// environment to do it in
+	Rcpp::NumericVector  f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
+	Rcpp::List           control(controlS); 			// named list of params
 
 	double VTR           = Rcpp::as<double>(control["VTR"]);	// value to reach
 	int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
 	int i_itermax        = Rcpp::as<int>(control["itermax"]);	// Maximum number of generations
-	long l_nfeval        = 0;					// number of function evaluations (NOT passed in)
+	long l_nfeval        = 0;					// nb of function evaluations (NOT passed in)
 	int i_D              = Rcpp::as<int>(control["npar"]);		// Dimension of parameter vector
 	int i_NP             = Rcpp::as<int>(control["NP"]);		// Number of population members
 	int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
@@ -71,8 +69,8 @@ RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP 
 	int i_iter = 0;
 
 	// call actual Differential Evolution optimization given the parameters
-	devol(VTR, f_weight, f_cross, i_bs_flag, minbound, maxbound, Rcpp::wrap(fn), Rcpp::wrap(rho), i_trace,
-	      i_strategy, i_D, i_NP, i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
+	devol(VTR, f_weight, f_cross, i_bs_flag, minbound, maxbound, fnS, rhoS, i_trace, i_strategy, i_D, i_NP, 
+	      i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
 	      ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP,
 	      d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
 

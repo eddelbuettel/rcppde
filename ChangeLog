@@ -1,5 +1,7 @@
 2010-11-04  Dirk Eddelbuettel  <edd@debian.org>
 
+	* src/deoptim.cpp: Pass fn and rho through to devol()
+
 	* R/DEoptim.R: Make 'env' an optional argument, don't redefine fn()
 	* man/DEoptim.Rd: Document 'env' argument
 
