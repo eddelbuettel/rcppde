@@ -6,7 +6,7 @@
   Performs evolutionary global optimization via the Differential Evolution algorithm.
 }
 \usage{
-DEoptim(fn, lower, upper, control = DEoptim.control(), ...)
+DEoptim(fn, lower, upper, control = DEoptim.control(), env, ...)
 }
 \arguments{
   \item{fn}{the function to be optimized (minimized). The function should have as its first 
@@ -16,6 +16,7 @@ DEoptim(fn, lower, upper, control = DEoptim.control(), ...)
     of \code{lower} and \code{upper} applied to the i-th parameter. The implementation searches
     between \code{lower} and \code{upper} for the global optimum (minimum) of \code{fn}.}
   \item{control}{a list of control parameters; see \code{\link{DEoptim.control}}.}
+  \item{env}{environment in which to evaluate \code{fn}; a new environment is created if missing.}
   \item{...}{further arguments to be passed to \code{fn}.}
 }
 \details{
