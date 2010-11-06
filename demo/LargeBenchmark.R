@@ -59,6 +59,7 @@ demo.LargeBenchmark  <- function() {
 
     res$ratioRcppToBasic <- res[,2]/res[,1]
     res$pctGainOfRcpp <- (1-res[,2]/res[,1])*100
+    res$netSpeedUp <- res[,1]/res[,2]
 
     print(res)
     cat("# Done", format(Sys.time()), "\n")

@@ -1,5 +1,5 @@
 #!/usr/bin/r -t
 
 svnver <- system("svnversion", intern=TRUE)
-cat("# SVN", svnver, "\n")
+cat("# small benchmark at SVN", svnver, "\n")
 source("demo/SmallBenchmark.R")
