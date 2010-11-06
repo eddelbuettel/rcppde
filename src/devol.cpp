@@ -12,8 +12,6 @@
 #include "evaluate.h"
 
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
-//double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env);
-//double evaluate(SEXP par, SEXP fcall, SEXP env);
 
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::colvec & fa_minbound, arma::colvec & fa_maxbound, SEXP fcall, SEXP rho, int i_trace,
@@ -25,25 +23,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::mat &d_pop, Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
-#ifdef USE_CPP_EVAL
-    Fun::FunctionPointer fun;
-    if (Rf_isString(fcall)) {	// did we stick an identifier of a function ?
-	std::string txt = Rcpp::as<std::string>(fcall);
-	Rprintf("Seeing %s as function text\n", txt.c_str());
-	Rcpp::XPtr<Fun> xptr(putFunPtrInXPtr(fcall));
-	fun = xptr->get();
-	Rcpp::NumericVector V(3); V[0] = 1.01; V[1] = 1.02; V[2] = 1.03;
-    }
-#endif
-    Rcpp::DE::EvalBase *ev = NULL;
+    Rcpp::DE::EvalBase *ev = NULL; 		// pointer to abstract base class
     if (TYPEOF(fcall) == EXTPTRSXP) { 		// non-standard mode: we are being passed an external pointer
-	//Rprintf("XPtr route\n");
-	//ev = new EvalCompiled(Rcpp::XPtr<Fun>( putFunPtrInXPtr(fcall) ));
-	ev = new Rcpp::DE::EvalCompiled(fcall);
-	//TYPEOF(rho) == ENVSXP
-    } else {
-	//Rprintf("Standard route\n");
-	ev = new Rcpp::DE::EvalStandard(fcall, rho);	// standard mode: env_ is an env, fcall_ is a function 
+	ev = new Rcpp::DE::EvalCompiled(fcall); // so assign a pointer using external pointer in fcall SEXP
+    } else {					// standard mode: env_ is an env, fcall_ is a function 
+	ev = new Rcpp::DE::EvalStandard(fcall, rho);	// so assign R function and environment
     }
 
     //ProfilerStart("/tmp/RcppDE.prof");
@@ -80,15 +64,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	} else { 				// or user-specified initial member 
 	    ta_popP.col(i) = initialpop.col(i);
 	} 
-	l_nfeval++;
 	memcpy(REAL(par), ta_popP.colptr(i), Rf_nrows(par) * sizeof(double));      
-#ifdef USE_CPP_EVAL
-	ta_popC[i] = fun(Rcpp::wrap(par));
-#else
-	//ta_popC[i] = evaluate(l_nfeval, ta_popP.colptr(i), par, fcall, rho);
-	//ta_popC[i] = evaluate(par, fcall, rho);
 	ta_popC[i] = ev->eval(par);
-#endif
 	if (i == 0 || ta_popC[i] <= t_bestC) {
 	    t_bestC = ta_popC[i];
 	    t_bestP = ta_popP.unsafe_col(i);
@@ -213,15 +190,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 
 	    // ------Trial mutation now in t_tmpP-----------------
-	    l_nfeval++;
 	    memcpy(REAL(par), t_tmpP.memptr(), Rf_nrows(par) * sizeof(double));      
-#ifdef USE_CPP_EVAL
-	    double t_tmpC = fun(Rcpp::wrap(par));
-#else
-	    //double t_tmpC = evaluate(l_nfeval, t_tmpP.memptr(), par, fcall, rho);	// Evaluate mutant in t_tmpP[]
-	    //double t_tmpC = evaluate(par, fcall, rho);	// Evaluate mutant in t_tmpP[]
 	    double t_tmpC = ev->eval(par);
-#endif
 	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {	    		// i_bs_flag means will choose best NP later
 		ta_newP.col(i) = t_tmpP;				// replace target with mutant 
 		ta_newC[i] = t_tmpC;
@@ -276,15 +246,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 	    if (same && i_iter > 1)  {
 		i_xav++;
-		l_nfeval++;
 		memcpy(REAL(par), t_bestP.memptr(), Rf_nrows(par) * sizeof(double));      
-#ifdef USE_CPP_EVAL
-		double tmp_best = fun(Rcpp::wrap(par));
-#else
-		//double tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho); // if re-evaluation of winner 
-		//double tmp_best = evaluate(par, fcall, rho); // if re-evaluation of winner 
 		double tmp_best = ev->eval(par);
-#endif
 		if (i_av_winner)		//  possibly letting the winner be the average of all past generations 
 		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + 
 			(d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
@@ -306,7 +269,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     
     d_pop = ta_oldP;
     i_iterations = i_iter;
-
+    l_nfeval = ev->getNbEvals();
     PutRNGstate();   
     // ProfilerStop();
 }

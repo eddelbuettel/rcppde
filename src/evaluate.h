@@ -90,7 +90,11 @@ private:
 
 	class EvalBase {
 	public:
+	    EvalBase() : neval(0) {};
 	    virtual double eval(SEXP par) = 0;
+	    unsigned long getNbEvals() { return neval; }
+        protected:
+            unsigned long int neval;
 	};
 
 	class EvalStandard : public EvalBase {
@@ -101,6 +105,7 @@ private:
 	    } 
 	    double eval(SEXP par) {
 		//return ((*this).*(funptr))(par); 	// isn't the syntax to eval a function pointer easy :) 
+		neval++;
 		return defaultfun(par);
 	    }
 	private:
@@ -126,6 +131,7 @@ private:
 		funptr = xptr->get();
 	    };
 	    double eval(SEXP par) {
+		neval++;
 		return funptr(par);
 	    }
 	private:
