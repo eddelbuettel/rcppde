@@ -28,7 +28,8 @@ namespace Rcpp {
 	    int n = x.size();
 	    double sum = 0.0;
 	    for (int i=0; i<n; i++) {
-		sum += 10 * ::sin(0.3 * x[i]) * ::sin(1.3 * x[i]*x[i]) + 0.00001 * x[i]*x[i]*x[i]*x[i] + 0.2 * x[i] + 80;
+		double xsq = x[i]*x[i];
+		sum += 10 * ::sin(0.3 * x[i]) * ::sin(1.3 * xsq) + 0.00001 * xsq*xsq + 0.2 * x[i] + 80;
 	    }
 	    sum /= n;
 	    return(sum);
@@ -39,71 +40,11 @@ namespace Rcpp {
 	    int n = x.size();
 	    double sum = 20.0;
 	    for (int i=0; i<n; i++) {
-		sum += x[i]+2 - 10*::cos(2*M_PI*x[i]);
+		sum += x[i]+2 - 10*::cos(M_2PI*x[i]);
 	    }
 	    return(sum);
 	}
 
-#if 0
-class Evaluator {		// class to evaluate a given function at a parameter
-public:
-    typedef double (Evaluator::*FunctionPointer)(SEXP);
-    Evaluator( FunctionPointer funptr_ ) : funptr(funptr_) {};
-    Evaluator(SEXP fcall_, SEXP env_) {
-	if (TYPEOF(env_) == ENVSXP) { 		// standard mode: env_ is an env, fcall_ is a function 
-	    //REprintf("In env case, default\n");
-	    fcall = fcall_;
-	    env = env_;
-	    funptr = &Evaluator::defaultfun;
-	} else {
-	    REprintf("NOT in env case, trying something new\n");
-#if 0
-	    //Rcpp::XPtr<Evaluator> xptr(fcall_); // fcall_ is really an XPtr to a C++ function ptr object Fun
-	    std::string txt = Rcpp::as<std::string>(env_);
-	    Rprintf("Seeing %s as function text\n", txt.c_str());
-	    //Rcpp::XPtr<Evaluator> xptr(putFunPtrInXPtr(env_));
-
-	    if (txt == "genrose")
-		funptr = new Evaluator(&genrose);
-	    else if (txt == "wild")
-		funptr = new Evaluator(&wild);
-	    else
-		funptr = new Evaluator(&rastrigin);
-
-	    //funptr = xptr->get();
-#endif
-	    fcall = fcall_;
-	    env = env_;
-	    funptr = &Evaluator::defaultfun;
-	}
-    };
-    double eval(SEXP par) {
-	return ((*this).*(funptr))(par); 	// isn't the syntax to eval a function pointer easy :) 
-    }
-    inline FunctionPointer get() { return funptr ; }
-private:
-    SEXP fcall, env;
-    double defaultfun(SEXP par) {
-	SEXP fn = ::Rf_lang2(fcall, par); 			   // this could be done with Rcpp 
-	SEXP sexp_fvec = ::Rf_eval(fn, env);		           // but is still a lot slower right now
-	double f_result = REAL(sexp_fvec)[0];
-	if (ISNAN(f_result)) 
-	    ::Rf_error("NaN value of objective function! \nPerhaps adjust the bounds.");
-	return(f_result); 
-    }
-    FunctionPointer funptr;
-};
-
-class Fun {			// class to wrap an external pointer around eval. function
-public:
-    typedef double (*FunctionPointer)(SEXP);
-    Fun( FunctionPointer ptr_ ) : ptr(ptr_) {};
-    inline FunctionPointer get() { return ptr ; }
-private:
-    FunctionPointer ptr ;
-};
-
-#endif
 	class EvalBase {
 	public:
 	    EvalBase() : neval(0) {};
@@ -115,27 +56,21 @@ private:
 
 	class EvalStandard : public EvalBase {
 	public:
-	    //typedef double (EvalStandard::*FunctionPointer)(SEXP);
-	    EvalStandard(SEXP fcall_, SEXP env_) : fcall(fcall_), env(env_) { 
-		//funptr = &EvalStandard::defaultfun;
-	
-	    } 
+	    EvalStandard(SEXP fcall_, SEXP env_) : fcall(fcall_), env(env_) {} 
 	    double eval(SEXP par) {
-		//return ((*this).*(funptr))(par); 	// isn't the syntax to eval a function pointer easy :) 
 		neval++;
 		return defaultfun(par);
 	    }
 	private:
 	    SEXP fcall, env;
-	    double defaultfun(SEXP par) {
-		SEXP fn = ::Rf_lang2(fcall, par); 			   // this could be done with Rcpp 
-		SEXP sexp_fvec = ::Rf_eval(fn, env);		           // but is still a lot slower right now
+	    double defaultfun(SEXP par) { 		// essentialy the same as the old evaluate
+		SEXP fn = ::Rf_lang2(fcall, par); 	// this could be done with Rcpp 
+		SEXP sexp_fvec = ::Rf_eval(fn, env);	// but is still a lot slower right now
 		double f_result = REAL(sexp_fvec)[0];
 		if (ISNAN(f_result)) 
 		    ::Rf_error("NaN value of objective function! \nPerhaps adjust the bounds.");
 		return(f_result); 
 	    }
-	    //FunctionPointer funptr;
 	};
 
 	typedef double (*funcPtr)(SEXP);
