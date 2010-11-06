@@ -1,3 +1,15 @@
+2010-11-06  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/evaluate.h: Converted from evaluate.cpp, now contains abstract
+	base class for evaluation as well as two implementations for the old
+	standard (using a function and environment from R) as well as new one
+	using external pointers passing a function pointer to a function with
+	signature double (*fun)(SEXP); also counts nb of calls inside class
+	* src/devol.cpp: Adapted to use the new framework
+
+	* demo/CompiledBenchmark: New benchmark demo showcasing new approach
+	* compBenchmark: New frontend script
+
 2010-11-04  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/deoptim.cpp: Pass fn and rho through to devol()

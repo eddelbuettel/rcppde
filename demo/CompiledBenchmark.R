@@ -47,24 +47,17 @@ demo.LargeBenchmark  <- function() {
                 return(sum);
              }
 
-             class Fun {
-             public:
-          	typedef double (*FunctionPointer)(SEXP);
-          	Fun( FunctionPointer ptr_ ) : ptr(ptr_) {};
-          	inline FunctionPointer get() { return ptr ; }
-             private:
-                FunctionPointer ptr ;
-             };
              '
 
     ## now via a class returning external pointer
     src.xptr <- 'std::string fstr = Rcpp::as<std::string>(funname);
+	         typedef double (*funcPtr)(SEXP);
                  if (fstr == "genrose")
-                     return(XPtr<Fun>(new Fun(&genrose)));
+                     return(XPtr<funcPtr>(new funcPtr(&genrose)));
                  else if (fstr == "wild")
-                     return(XPtr<Fun>(new Fun(&wild)));
+                     return(XPtr<funcPtr>(new funcPtr(&wild)));
                  else
-                     return(XPtr<Fun>(new Fun(&rastrigin)));
+                     return(XPtr<funcPtr>(new funcPtr(&rastrigin)));
                  '
     create_xptr <- cxxfunction(signature(funname="character"), body=src.xptr, inc=inc, plugin="Rcpp")
 
