@@ -12,6 +12,7 @@
 
 namespace Rcpp {
     namespace DE {
+
 	double genrose(SEXP xs) {	// genrose function in C++
 	    Rcpp::NumericVector x(xs);
 	    int n = x.size();
@@ -55,7 +56,22 @@ public:
 	    env = env_;
 	    funptr = &Evaluator::defaultfun;
 	} else {
-	    REprintf("NOT in env case, trying something new -- does not work yet\n");
+	    REprintf("NOT in env case, trying something new\n");
+#if 0
+	    //Rcpp::XPtr<Evaluator> xptr(fcall_); // fcall_ is really an XPtr to a C++ function ptr object Fun
+	    std::string txt = Rcpp::as<std::string>(env_);
+	    Rprintf("Seeing %s as function text\n", txt.c_str());
+	    //Rcpp::XPtr<Evaluator> xptr(putFunPtrInXPtr(env_));
+
+	    if (txt == "genrose")
+		funptr = new Evaluator(&genrose);
+	    else if (txt == "wild")
+		funptr = new Evaluator(&wild);
+	    else
+		funptr = new Evaluator(&rastrigin);
+
+	    //funptr = xptr->get();
+#endif
 	    fcall = fcall_;
 	    env = env_;
 	    funptr = &Evaluator::defaultfun;
@@ -77,17 +93,17 @@ private:
     }
     FunctionPointer funptr;
 };
+
+class Fun {			// class to wrap an external pointer around eval. function
+public:
+    typedef double (*FunctionPointer)(SEXP);
+    Fun( FunctionPointer ptr_ ) : ptr(ptr_) {};
+    inline FunctionPointer get() { return ptr ; }
+private:
+    FunctionPointer ptr ;
+};
+
 #endif
-
-	class Fun {			// class to wrap an external pointer around eval. function
-	public:
-	    typedef double (*FunctionPointer)(SEXP);
-	    Fun( FunctionPointer ptr_ ) : ptr(ptr_) {};
-	    inline FunctionPointer get() { return ptr ; }
-	private:
-	    FunctionPointer ptr ;
-	};
-
 	class EvalBase {
 	public:
 	    EvalBase() : neval(0) {};
@@ -102,6 +118,7 @@ private:
 	    //typedef double (EvalStandard::*FunctionPointer)(SEXP);
 	    EvalStandard(SEXP fcall_, SEXP env_) : fcall(fcall_), env(env_) { 
 		//funptr = &EvalStandard::defaultfun;
+	
 	    } 
 	    double eval(SEXP par) {
 		//return ((*this).*(funptr))(par); 	// isn't the syntax to eval a function pointer easy :) 
@@ -121,31 +138,32 @@ private:
 	    //FunctionPointer funptr;
 	};
 
+	typedef double (*funcPtr)(SEXP);
 	class EvalCompiled : public EvalBase {
 	public:
-	    EvalCompiled( Rcpp::XPtr<Fun> xptr ) {
-		funptr = xptr->get();
+	    EvalCompiled( Rcpp::XPtr<funcPtr> xptr ) {
+		funptr = *(xptr);
 	    };
 	    EvalCompiled( SEXP xps ) {
-		Rcpp::XPtr<Fun> xptr(xps);
-		funptr = xptr->get();
+		Rcpp::XPtr<funcPtr> xptr(xps);
+		funptr = *(xptr);
 	    };
 	    double eval(SEXP par) {
 		neval++;
 		return funptr(par);
 	    }
 	private:
-	    Fun::FunctionPointer funptr;
+	    funcPtr funptr;
 	};
 
 	RcppExport SEXP putFunPtrInXPtr(SEXP funname) {
 	    std::string fstr = Rcpp::as<std::string>(funname);
 	    if (fstr == "genrose")
-		return(Rcpp::XPtr<Fun>(new Fun(&genrose)));
+		return(Rcpp::XPtr<funcPtr>(new funcPtr(&genrose)));
 	    else if (fstr == "wild")
-		return(Rcpp::XPtr<Fun>(new Fun(&wild)));
+		return(Rcpp::XPtr<funcPtr>(new funcPtr(&wild)));
 	    else
-		return(Rcpp::XPtr<Fun>(new Fun(&rastrigin)));
+		return(Rcpp::XPtr<funcPtr>(new funcPtr(&rastrigin)));
 	}
 
     }
