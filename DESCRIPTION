@@ -10,4 +10,5 @@ Description: This package provides an efficient C++ based implementation of the
   when moving code from plain old C to modern C++.
 License: GPL (>= 2)
 Depends: Rcpp, RcppArmadillo (>= 0.2.8)
+Suggests: inline, DEoptim
 LinkingTo: Rcpp, RcppArmadillo
