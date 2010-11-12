@@ -4,7 +4,7 @@
 // Copyright (C) 2010  Dirk Eddelbuettel <edd@debian.org>
 //
 // DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
-
+#if 0
 #ifdef USE_OPENMP
 #include <RcppArmadillo.h>
 
@@ -22,4 +22,4 @@ double evaluate(long &l_nfeval, const double *param, SEXP par, SEXP fcall, SEXP 
     return(sum);
 }
 #endif
-
+#endif

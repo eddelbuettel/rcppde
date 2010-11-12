@@ -8,8 +8,9 @@
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
 #ifndef USE_OPENMP
-#include <RcppArmadillo.h>
-#include "evaluate.h"
+#include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
+#include <omp.h>		// OpenMP for compiler-generated multithreading
+#include "evaluate.h"		// simple function evaluation framework
 
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 
@@ -23,14 +24,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::mat &d_pop, Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
+    //ProfilerStart("/tmp/RcppDE.prof");
     Rcpp::DE::EvalBase *ev = NULL; 		// pointer to abstract base class
     if (TYPEOF(fcall) == EXTPTRSXP) { 		// non-standard mode: we are being passed an external pointer
 	ev = new Rcpp::DE::EvalCompiled(fcall); // so assign a pointer using external pointer in fcall SEXP
     } else {					// standard mode: env_ is an env, fcall_ is a function 
 	ev = new Rcpp::DE::EvalStandard(fcall, rho);	// so assign R function and environment
     }
-
-    //ProfilerStart("/tmp/RcppDE.prof");
     const int urn_depth = 5;   			// 4 + one index to avoid 
     Rcpp::NumericVector par(i_D);		// initialize parameter vector to pass to evaluate function 
     arma::icolvec::fixed<urn_depth> ia_urn2; 	// fixed-size vector for urn draws
@@ -191,7 +191,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
 	    // ------Trial mutation now in t_tmpP-----------------
 	    memcpy(REAL(par), t_tmpP.memptr(), Rf_nrows(par) * sizeof(double));      
-	    double t_tmpC = ev->eval(par);
+	    double t_tmpC = ev->eval(par);				// Evaluate mutant in t_tmpP
 	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {	    		// i_bs_flag means will choose best NP later
 		ta_newP.col(i) = t_tmpP;				// replace target with mutant 
 		ta_newC[i] = t_tmpC;
@@ -247,7 +247,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    if (same && i_iter > 1)  {
 		i_xav++;
 		memcpy(REAL(par), t_bestP.memptr(), Rf_nrows(par) * sizeof(double));      
-		double tmp_best = ev->eval(par);
+		double tmp_best = ev->eval(par);// if re-evaluation of winner 
 		if (i_av_winner)		//  possibly letting the winner be the average of all past generations 
 		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + 
 			(d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);

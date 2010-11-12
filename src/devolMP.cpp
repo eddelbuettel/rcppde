@@ -10,9 +10,25 @@
 #ifdef USE_OPENMP
 #include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
 #include <omp.h>		// OpenMP for compiler-generated multithreading
+#include "evaluate.h"		// simple function evaluation framework
 
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
-double evaluate(long &l_nfeval, const double *param, SEXP parS, SEXP fcall, SEXP env);
+
+inline double drndu(void) {
+#ifdef USE_OPENMP
+    return arma::randu();
+#else
+    return ::unif_rand();
+#endif
+}
+
+inline int irndu(const double val) {
+#ifdef USE_OPENMP
+    return static_cast<int>(arma::randu() * val);
+#else
+    return static_cast<int>(::unif_rand() * val);
+#endif
+}
 
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::colvec & fa_minbound, arma::colvec & fa_maxbound, SEXP fcall, SEXP rho, int i_trace,
@@ -25,6 +41,12 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            int & i_iterations, double i_pPct, long & l_nfeval) {
 
     //ProfilerStart("/tmp/RcppDE.prof");
+    Rcpp::DE::EvalBase *ev = NULL; 		// pointer to abstract base class
+    if (TYPEOF(fcall) == EXTPTRSXP) { 		// non-standard mode: we are being passed an external pointer
+	ev = new Rcpp::DE::EvalCompiled(fcall); // so assign a pointer using external pointer in fcall SEXP
+    } else {					// standard mode: env_ is an env, fcall_ is a function 
+	ev = new Rcpp::DE::EvalStandard(fcall, rho);	// so assign R function and environment
+    }
     const int urn_depth = 5;   			// 4 + one index to avoid 
     Rcpp::NumericVector par(i_D);		// initialize parameter vector to pass to evaluate function 
     arma::icolvec::fixed<urn_depth> ia_urn2; 	// fixed-size vector for urn draws
@@ -53,13 +75,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     for (int i = 0; i < i_NP; i++) {		// ------Initialization-----------------------------
 	if (i_specinitialpop <= 0) { 		// random initial member 
 	    for (int j = 0; j < i_D; j++) {
-		//ta_popP.at(j,i) = fa_minbound[j] + ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
-		ta_popP.at(j,i) = fa_minbound[j] + arma::randu() * (fa_maxbound[j] - fa_minbound[j]);
+		ta_popP.at(j,i) = fa_minbound[j] + drndu() * (fa_maxbound[j] - fa_minbound[j]);
 	    }
 	} else { 				// or user-specified initial member 
 	    ta_popP.col(i) = initialpop.col(i);
 	} 
-	ta_popC[i] = evaluate(l_nfeval, ta_popP.colptr(i), par, fcall, rho);
+	memcpy(REAL(par), ta_popP.colptr(i), i_D * sizeof(double));      
+	ta_popC[i] = ev->eval(par);
 	if (i == 0 || ta_popC[i] <= t_bestC) {
 	    t_bestC = ta_popC[i];
 	    t_bestP = ta_popP.unsafe_col(i);
@@ -73,7 +95,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     int popcnt = 0;
     int i_xav = 1;
   
-    for (i_iter=0; (i_iter < i_itermax) && (t_bestC > VTR); i_iter++) { // main loop ====================================
+    for (i_iter=0; (i_iter < i_itermax) && (t_bestC > VTR); i_iter++) { // main loop =============================
 	if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {  	// store intermediate populations
 	    d_storepop[popcnt++] = Rcpp::wrap( trans(ta_oldP) );
 	} // end store pop 
@@ -83,15 +105,14 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	t_bestitP = t_bestP;
 	//i_iter++;				// increase iteration counter
      
-	//double f_dither = f_weight + ::unif_rand() * (1.0 - f_weight);	// ----computer dithering factor -----------------
-	double f_dither = f_weight + arma::randu() * (1.0 - f_weight);	// ----computer dithering factor -----------------
+	double f_dither = f_weight + drndu() * (1.0 - f_weight);	// ----computer dithering factor ----------
       
-	if (i_strategy == 6) {			// ---DE/current-to-p-best/1 -----------------------------------------------------
-	    arma::colvec temp_oldC = ta_oldC;					// create a copy of ta_oldC to avoid changing it 
-	    rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );  	// sort temp_oldC to use sortIndex later 
+	if (i_strategy == 6) {			// ---DE/current-to-p-best/1 --------------------------------------
+	    arma::colvec temp_oldC = ta_oldC;					// copy of ta_oldC to not change it 
+	    rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );  	// to use sortIndex later 
 	}
 
-#pragma omp parallel for shared(ia_urn2,ta_oldP,ta_newP,ta_newC,t_tmpP,ia_urntmp) schedule(static)
+#pragma omp parallel for shared(ia_urn2,ta_oldP,ta_newP,ta_newC,t_tmpP,ia_urntmp) schedule(static,1)
 	for (int i = 0; i < i_NP; i++) {	// ----start of loop through ensemble------------------------
 
 	    t_tmpP = ta_oldP.col(i);		// t_tmpP is the vector to mutate and eventually select
@@ -102,107 +123,94 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    // ===Choice of strategy=======================================================
 	    switch (i_strategy) {
 
-	    case 1: {				// ---classical strategy DE/rand/1/bin-----------------------------------------
-		//int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		int j = static_cast<int>(arma::randu() * i_D); 	// random parameter 
+	    case 1: {				// ---classical strategy DE/rand/1/bin-----------------------------
+		int j = irndu(i_D); 		// random parameter 
 		do {				// add fluctuation to random target 
-		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_weight * 
+			(ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
 		    j = (j + 1) % i_D;
-		//} while ((::unif_rand() < f_cross) && (++k < i_D));
-		} while ((arma::randu() < f_cross) && (++k < i_D));
+		} while ((drndu() < f_cross) && (++k < i_D));
 		break;
 	    }
-	    case 2: {				// ---DE/local-to-best/1/bin---------------------------------------------------
-		//int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		int j = static_cast<int>(arma::randu() * i_D); 	// random parameter 
+	    case 2: {				// ---DE/local-to-best/1/bin---------------------------------------
+		int j = irndu(i_D); 		// random parameter 
 		do {				// add fluctuation to random target 
-		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+		    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * 
+			(ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
 		    j = (j + 1) % i_D;
-		//} while ((::unif_rand() < f_cross) && (++k < i_D));
-		} while ((arma::randu() < f_cross) && (++k < i_D));
+		} while ((drndu() < f_cross) && (++k < i_D));
 		break;
 	    }
-	    case 3: {				// ---DE/best/1/bin with jitter------------------------------------------------
-		//int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		int j = static_cast<int>(arma::randu() * i_D); 	// random parameter 
+	    case 3: {				// ---DE/best/1/bin with jitter------------------------------------
+		int j = irndu(i_D); 		// random parameter 
 		do {				// add fluctuation to random target 
-		    //double f_jitter = 0.0001 * ::unif_rand() + f_weight; 
-		    double f_jitter = 0.0001 * arma::randu() + f_weight; 
+		    double f_jitter = 0.0001 * drndu() + f_weight; 
 		    t_tmpP[j] = t_bestitP[j] + f_jitter * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
 		    j = (j + 1) % i_D;
-		//} while ((::unif_rand() < f_cross) && (++k < i_D));
-		} while ((arma::randu() < f_cross) && (++k < i_D));
+		} while ((drndu() < f_cross) && (++k < i_D));
 		break;
 	    }
-	    case 4: {				// ---DE/rand/1/bin with per-vector-dither-------------------------------------
-		//int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		int j = static_cast<int>(arma::randu() * i_D); 	// random parameter 
+	    case 4: {				// ---DE/rand/1/bin with per-vector-dither-------------------------
+		int j = irndu(i_D); 		// random parameter 
 		do {				// add fluctuation to random target *
-		    //t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + (f_weight + ::unif_rand()*(1.0 - f_weight))* (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
-		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + (f_weight + arma::randu()*(1.0 - f_weight))* (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + (f_weight + drndu()*(1.0 - f_weight)) 
+			* (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
 		    j = (j + 1) % i_D;
-		//} while ((::unif_rand() < f_cross) && (++k < i_D));
-		} while ((arma::randu() < f_cross) && (++k < i_D));
+		} while ((drndu() < f_cross) && (++k < i_D));
 		break;
 	    }
-	    case 5: {				// ---DE/rand/1/bin with per-generation-dither---------------------------------
-		//int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		int j = static_cast<int>(arma::randu() * i_D); 	// random parameter 
+	    case 5: {				// ---DE/rand/1/bin with per-generation-dither---------------------
+		int j = irndu(i_D); 		// random parameter 
 		do {				// add fluctuation to random target 
-		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_dither * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+		    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_dither 
+			* (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
 		    j = (j + 1) % i_D;
-		//} while ((::unif_rand() < f_cross) && (++k < i_D));
-		} while ((arma::randu() < f_cross) && (++k < i_D));
+		} while ((drndu() < f_cross) && (++k < i_D));
 		break;
 	    }
-	    case 6: {				// ---DE/current-to-p-best/1 (JADE)--------------------------------------------
-		//int i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
-		int i_pbest = sortIndex[static_cast<int>(arma::randu() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
-		//int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		int j = static_cast<int>(arma::randu() * i_D); 	// random parameter 
+	    case 6: {				// ---DE/current-to-p-best/1 (JADE)--------------------------------
+		int i_pbest = sortIndex[irndu(p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
+		int j = irndu(i_D); 		// random parameter 
 		do {				// add fluctuation to random target 
-		    t_tmpP[j] = ta_oldP.at(j,i) + f_weight * (ta_oldP.at(j,i_pbest) - ta_oldP.at(j,i)) + f_weight * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
+		    t_tmpP[j] = ta_oldP.at(j,i) + f_weight * (ta_oldP.at(j,i_pbest) - ta_oldP.at(j,i)) + 
+			f_weight * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
 		    j = (j + 1) % i_D;
-		//} while ((::unif_rand() < f_cross) && (++k < i_D));
-		} while ((arma::randu() < f_cross) && (++k < i_D));
+		} while ((drndu() < f_cross) && (++k < i_D));
 		break;
 	    }
-	    default: {				// ---variation to DE/rand/1/bin: either-or-algorithm--------------------------
-		//int j = static_cast<int>(::unif_rand() * i_D); 	// random parameter 
-		int j = static_cast<int>(arma::randu() * i_D); 	// random parameter 
-		//if (::unif_rand() < 0.5) { 	// differential mutation, Pmu = 0.5 
-		if (arma::randu() < 0.5) { 	// differential mutation, Pmu = 0.5 
+	    default: {				// ---variation to DE/rand/1/bin: either-or-algorithm--------------
+		int j = irndu(i_D); 		// random parameter 
+		if (drndu() < 0.5) { 		// differential mutation, Pmu = 0.5 
 		    do {			// add fluctuation to random target */
-			t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+			t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + 
+			    f_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
 			j = (j + 1) % i_D;
-		    //} while ((::unif_rand() < f_cross) && (++k < i_D));
-		    } while ((arma::randu() < f_cross) && (++k < i_D));
+		    } while ((drndu() < f_cross) && (++k < i_D));
 
 		} else { 			// recombination with K = 0.5*(F+1) -. F-K-Rule 
 		    do {			// add fluctuation to random target */
-			t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + 0.5 * (f_weight + 1.0) * (ta_oldP.at(j,ia_urn2[2]) + ta_oldP.at(j,ia_urn2[3]) - 2 * ta_oldP.at(j,ia_urn2[1]));
+			t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + 0.5 * (f_weight + 1.0) * 
+			    (ta_oldP.at(j,ia_urn2[2]) + ta_oldP.at(j,ia_urn2[3]) - 2 * ta_oldP.at(j,ia_urn2[1]));
 			j = (j + 1) % i_D;
-		    //} while ((::unif_rand() < f_cross) && (++k < i_D));
-		    } while ((arma::randu() < f_cross) && (++k < i_D));
+		    } while ((drndu() < f_cross) && (++k < i_D));
 		}
 		break;
 	    }
 	    } // end switch (i_strategy) ...
 	
-	    for (int j = 0; j < i_D; j++) {		// ----boundary constraints, bounce-back method was not enforcing bounds correctly
+	    for (int j = 0; j < i_D; j++) {	// boundary constr, bounce-back method was not enforcing bounds 
 		if (t_tmpP[j] < fa_minbound[j]) {
-		    //t_tmpP[j] = fa_minbound[j] + ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
-		    t_tmpP[j] = fa_minbound[j] + arma::randu() * (fa_maxbound[j] - fa_minbound[j]);
+		    t_tmpP[j] = fa_minbound[j] + drndu() * (fa_maxbound[j] - fa_minbound[j]);
 		}
 		if (t_tmpP[j] > fa_maxbound[j]) {
-		    //t_tmpP[j] = fa_maxbound[j] - ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
-		    t_tmpP[j] = fa_maxbound[j] - arma::randu() * (fa_maxbound[j] - fa_minbound[j]);
+		    t_tmpP[j] = fa_maxbound[j] - drndu() * (fa_maxbound[j] - fa_minbound[j]);
 		}
 	    }
 
 	    // ------Trial mutation now in t_tmpP-----------------
-	    double t_tmpC = evaluate(l_nfeval, t_tmpP.memptr(), par, fcall, rho);	// Evaluate mutant in t_tmpP[]
-	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {	    		// i_bs_flag means that we will choose best NP vectors from old and new population later
+	    memcpy(REAL(par), t_tmpP.memptr(), i_D * sizeof(double));      
+	    double t_tmpC = ev->eval(par);				// Evaluate mutant in t_tmpP
+	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {	    		// i_bs_flag means will choose best NP later
 		ta_newP.col(i) = t_tmpP;				// replace target with mutant 
 		ta_newC[i] = t_tmpC;
 		if (t_tmpC <= t_bestC) {
@@ -213,7 +221,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 		ta_newP.col(i) = ta_oldP.col(i);
 		ta_newC[i] = ta_oldC[i];
 	    }
+	    //#ifdef USE_OPENMP
+	    //std::cerr << "Thread " << omp_get_thread_num() << "\n";
+	    //#endif
 	} // End mutation loop through pop., ie the "for (i = 0; i < i_NP; i++)"
+#pragma omp barrier
 
 	if (i_bs_flag) {	// examine old and new pop. and take the best NP members into next generation 
 	    
@@ -256,9 +268,9 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 	    }
 	    if (same && i_iter > 1)  {
 		i_xav++;
-		double tmp_best = evaluate(l_nfeval, t_bestP.memptr(), par, fcall, rho);	// if re-evaluation of winner 
-		
-		if (i_av_winner)		//  possibly letting the winner be the average of all past generations 
+		memcpy(REAL(par), t_bestP.memptr(), i_D * sizeof(double));      
+		double tmp_best = ev->eval(par);// if re-evaluation of winner 
+		if (i_av_winner)		//  possibly letting winner be the average of all past generations 
 		    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + 
 			(d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
 		else
@@ -278,8 +290,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     } // end loop through generations 
     
     d_pop = ta_oldP;
-    i_iterations = i_iter;
-
+    i_iterations = i_iter;    
+    l_nfeval = ev->getNbEvals();
     //PutRNGstate();   
     // ProfilerStop();
 }
