@@ -11,7 +11,9 @@ DEoptim(fn, lower, upper, control = DEoptim.control(), env, ...)
 \arguments{
   \item{fn}{the function to be optimized (minimized). The function should have as its first 
     argument the vector of real-valued parameters to optimize, and return a scalar real result. \code{NA} 
-    and \code{NaN} values are not allowed.}
+    and \code{NaN} values are not allowed. \code{fn} can also been
+    external pointer object encapsulating a C/C++-level function pointer
+    to a compiled functions.}
   \item{lower, upper}{two vectors specifying scalar real lower and upper bounds on each parameter to be optimized, so that the i-th element 
     of \code{lower} and \code{upper} applied to the i-th parameter. The implementation searches
     between \code{lower} and \code{upper} for the global optimum (minimum) of \code{fn}.}
