@@ -7,10 +7,9 @@
 // and based on DE-Engine v4.0, Rainer Storn, 2004  
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
-#ifndef USE_OPENMP
 #include <RcppArmadillo.h>	// declarations for both Rcpp and RcppArmadillo offering Armadillo classes
-#include <omp.h>		// OpenMP for compiler-generated multithreading
 #include "evaluate.h"		// simple function evaluation framework
+// #include <google/profiler.h>
 
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 
@@ -273,4 +272,3 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     PutRNGstate();   
     // ProfilerStop();
 }
-#endif

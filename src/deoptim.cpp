@@ -29,7 +29,7 @@ RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP 
 	double VTR           = Rcpp::as<double>(control["VTR"]);	// value to reach
 	int i_strategy       = Rcpp::as<int>(control["strategy"]);    	// chooses DE-strategy
 	int i_itermax        = Rcpp::as<int>(control["itermax"]);	// Maximum number of generations
-	long l_nfeval        = 0;					// nb of function evaluations (NOT passed in)
+	long l_nfeval        = 0;					// nb of function evals (NOT passed in)
 	int i_D              = Rcpp::as<int>(control["npar"]);		// Dimension of parameter vector
 	int i_NP             = Rcpp::as<int>(control["NP"]);		// Number of population members
 	int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
@@ -44,7 +44,7 @@ RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP 
 	int i_av_winner      = Rcpp::as<int>(control["avWinner"]);  	// Average 
 	double i_pPct        = Rcpp::as<double>(control["p"]); 		// p to define the top 100p% best solutions 
 
-	arma::colvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert three Rcpp vectors to arma vectors
+	arma::colvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert Rcpp vectors to arma vectors
 	arma::colvec maxbound(f_upper.begin(), f_upper.size(), false);
 	arma::mat initpopm(initialpopm.begin(), initialpopm.rows(), initialpopm.cols(), false);
 

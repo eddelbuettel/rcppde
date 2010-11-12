@@ -7,7 +7,6 @@
 // and based on DE-Engine v4.0, Rainer Storn, 2004  
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
-#ifndef USE_OPENMP
 #include <RcppArmadillo.h>
 
 // Function       : void permute(int ia_urn2[], int i_urn2_depth)
@@ -46,4 +45,3 @@ void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1
     }
     PutRNGstate();
 }
-#endif
