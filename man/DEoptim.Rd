@@ -86,7 +86,7 @@ DEoptim(fn, lower, upper, control = DEoptim.control(), env, ...)
   Further details and examples of the \R package \pkg{DEoptim} can be found
   in Mullen et al. (2009) and Ardia et al. (2010).
   
-  Please cite the package in publications. Use \code{citation("DEoptim")}.
+  Please cite the package in publications. %Use \code{citation("DEoptim")}.
 }
 \value{
   The output of the function \code{DEoptim} is a member of the \code{S3} class \code{DEoptim}. More precisely,
@@ -214,6 +214,9 @@ DEoptim(fn, lower, upper, control = DEoptim.control(), env, ...)
   URL \url{http://ssrn.com/abstract=1584905}
 }
 \author{
+  For \pkg{RcppDE}: Dirk Eddelbuettel.
+  
+  For \pkg{DEoptim}: 
   David Ardia, Katharine Mullen \email{katharine.mullen@nist.gov}, 
   Brian Peterson and Joshua Ulrich.
 }

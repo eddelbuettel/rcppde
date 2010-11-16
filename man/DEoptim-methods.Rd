@@ -34,9 +34,12 @@
   Further details and examples of the \R package \pkg{DEoptim} can be found
   in Mullen et al. (2009) and Ardia et al. (2010).
 
-  Please cite the package in publications. Use \code{citation("DEoptim")}.
+  Please cite the package in publications. % Use \code{citation("DEoptim")}.
 }
 \author{
+  For \pkg{RcppDE}: Dirk Eddelbuettel.
+  
+  For \pkg{DEoptim}: 
   David Ardia, Katharine Mullen \email{katharine.mullen@nist.gov}, 
   Brian Peterson and Joshua Ulrich.
 }

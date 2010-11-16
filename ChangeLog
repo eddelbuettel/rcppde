@@ -1,3 +1,7 @@
+2010-11-16  Dirk Eddelbuettel  <edd@debian.org>
+
+	* man/*.Rd: Added Author note for RcppDE.
+
 2010-11-06  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/evaluate.h: Converted from evaluate.cpp, now contains abstract
@@ -63,7 +67,7 @@
 	  - corrected inner loop when bs=TRUE
 
 	* DESCRIPTION: explicit Depends: on RcppArmadillo (>= 0.2.8)
-	
+
 2010-10-19  Dirk Eddelbuettel  <edd@debian.org>
 
 	* R/DEoptim.R:
