@@ -133,36 +133,36 @@ appendix contains a list of figures contrasting the two implementations.
 functionality is provided by three \proglang{R} files, as well as three
 \proglang{C} files.
 
-Table~\ref{tab:Rfiles} lists the files and corresponding key functions:
+Many more changes were made to the \proglang{C} files: besides the obvious
+porting from \proglang{C} to \proglang{C++}, several internal code changes
+were made.  The overall architecture and API remained as unchanged as
+possible.  
+%
+On the other hand, very few changes were required at the \proglang{R}
+level. The user-facing side of \pkg{DEoptim} persists virtually unchanged.  
 
-\begin{table}[htb]
-  \begin{center}
-    \begin{tabular}{lr}
-      \toprule
-      File                                          & Functions \\ 
-%                                                    \cmidrule{2}
-      \verb|DEoptim.R| \phantom{XXXXXXXXX}        & \verb|DEoptim()| \\
-                                                   & \verb|DEoptim.control()| \\[6pt]
-      \verb|methods.R|                            & \verb|summary.DEoptim()| \\
-                                                   & \verb|plot.DEoptim()| \\[6pt]
-      \verb|zzz.R|                                & \verb|.onLoad()| \\
-      \bottomrule
-    \end{tabular}
-    \caption{Source file organisation for \proglang{R} files in \pkg{DEoptim}
-    and \pkg{RcppDE}}
-    \label{tab:Rfiles}
-  \end{center}
-\end{table}
+Because of the dominant number of changes at the level of the compiled
+language, we discuss the structure, and later on changes, first before
+turning to the \proglang{R} side.
 
-Very few changes has to made for \pkg{RcppDE} as keeping the interface
-compatible was an important goal. As can be seen from table~\ref{tab:Rfiles},
-no files or functions were added.  A more detailed comparison follow below
-in section~\ref{sec:Rchanges}.
+\subsection[C / C++ structure and changes]{\proglang{} / \proglang{C++} structure and changes}
 
-Similarly, table~\ref{tab:Cfiles} lists the \proglang{C} and \proglang{C++}
-files in \pkg{DEoptim} and \pkg{RcppDE}, respectively:
+Table~\ref{tab:Cfiles} lists the \proglang{C} and \proglang{C++}
+files in \pkg{DEoptim} and \pkg{RcppDE}, respectively. 
+The large file \verb|de4_0.c| has been split into three files: one each for
+the core functions \verb|DEoptim()| (which is called from \proglang{R}),
+\verb|devol()| (which is the core differential evolution optimisation
+routine) and \verb|permute()| (which is a helper function used to shuffle
+indices).  
 
-\begin{table}[htb]
+The evalution function has been replaced by a base class and two virtual
+classes. These can now use of an objective function written in \proglang{R}
+(as in \pkg{DEoptim}) as well as one written in \proglang{C++} which can lead
+to substantial speed improvements.  Section~\ref{sec:Cppchanges} discusses
+these changes in more detail.
+
+
+\begin{table}[tb]
   \begin{center}
     \begin{tabular}{lrclr}
       \toprule
@@ -174,8 +174,8 @@ files in \pkg{DEoptim} and \pkg{RcppDE}, respectively:
                       & \verb|devol()|    & & \verb|devol.cpp|    & \verb|devol()| \\
                       & \verb|permute()|  & & \verb|permute.cpp| & \verb|permute()| \\[6pt]
       \verb|evaluate.c|&  \verb|evaluate()| & & & \\[6pt]
-        &             & & \verb|evaluate.h|& \phantom{XX} \verb|EvalBase class|  \\[6pt]
-      \verb|get_element.c|\phantom{XX} &  \verb|getListElement()| & \phantom{XXXX} & & \\
+        &             & & \verb|evaluate.h|& \phantom{X} \verb|EvalBase class|  \\[6pt]
+      \verb|get_element.c|\phantom{X} &  \verb|getListElement()| & \phantom{X} & & \\
       \bottomrule
     \end{tabular}
     \caption{Source file organisation for \proglang{C} files in \pkg{DEoptim}}
@@ -183,29 +183,237 @@ files in \pkg{DEoptim} and \pkg{RcppDE}, respectively:
   \end{center}
 \end{table}
 
-The large file \verb|de4_0.c| has been split into three files: one each for
-the core functions \verb|DEoptim()| (which is called from \proglang{R}),
-\verb|devol()| (which is the core differential evolution optimisation
-routine) and \verb|permute()| (which is a helper function used to shuffle
-indices).  The evalution function has been replaced by a base class and two
-virtual classes. These use of an objective function written in \proglang{R}
-(as in \pkg{DEoptim}) as well as in \proglang{C++} which can lead to
-substantial speed improvements. 
-Section~\ref{sec:Cppchanges} discusses these changes in more detail.
+\subsection[R structure and changes]{\proglang{R} structure and changes}
 
-\section[R changes]{\proglang{R} changes}
-\label{sec:Rchanges}
+Table~\ref{tab:Rfiles} lists the files and corresponding key functions.  Very
+few changes has to made for \pkg{RcppDE} as keeping the interface compatible
+was an important goal. As can be seen from table~\ref{tab:Rfiles}, no files
+or functions were added.  A more detailed comparison follow below in
+section~\ref{sec:Rchanges}.
 
-TBD
+\begin{table}[tb]
+  \begin{center}
+    \begin{tabular}{lr}
+      \toprule
+      File                                     & Functions \\ 
+      \midrule
+%                                                \cmidrule{2}
+      \verb|DEoptim.R| \phantom{XXXXX}        & \verb|DEoptim()| \\
+                                                & \verb|DEoptim.control()| \\[6pt]
+      \verb|methods.R|                         & \verb|summary.DEoptim()| \\
+                                                & \verb|plot.DEoptim()| \\[6pt]
+      \verb|zzz.R|                             & \verb|.onLoad()| \\
+      \bottomrule
+    \end{tabular}
+    \caption{Source file organisation for \proglang{R} files in \pkg{DEoptim}
+    and \pkg{RcppDE}}
+    \label{tab:Rfiles}
+  \end{center}
+\end{table}
 
-\section[C++ changes]{\proglang{C++} changes}
+
+\section[C / C++ changes]{\proglang{C} / \proglang{C++} changes}
 \label{sec:Cppchanges}
+
+In this section, we will look at the changes at the \proglang{C} /
+\proglang{C++} level. Figures~\ref{fig:deoptim_start} to
+\ref{fig:deoptim_end} contain the code the highest-level \proglang{C++}
+function: \verb|DEoptim()| (which we renamed from \verb|DEoptim_C()| as there
+is no need for a different name at the \proglang{C} level relative to
+\proglang{R}). This is followed by figures~\ref{fig:devol_start} to
+\ref{fig:devol_return} on the main worker function \verb|devol()| before
+figure~\ref{fig:evaluate_fun} compares the objective function evaluation of
+as the last element at the \proglang{C} / \proglang{C++} level.
 
 \subsection[de4_0.c and deoptim.cpp]{\code{de4\_0.c} and \code{deoptim.cpp}}
 
+The \verb|DEoptim()| function (renamed from \verb|DEoptim_C()| as there is no need for a different
+name at the \proglang{C} level relative to \proglang{R}) is the entry point
+from \proglang{R}. It receives parameters, sets up the call of \verb|devol()|
+and then prepares the return values. 
+
+\paragraph{Part 1: Start of \texttt{DEoptim()}} The first part concerns
+itself with receiving parameters from \proglang{R};
+figure~\ref{fig:devol_start} displays this. The pure mechanics of passing and
+receiving parameters from \proglang{R} are easier thanks to logic provided by
+the \pkg{Rcpp} package:
+\begin{enumerate}
+\item Figure~\ref{fig:deoptim_start} illustrates this point: Panel B (with code
+  using \proglang{C++}) appears to be about half the size of panel A but this
+  due in part to bringing comments on the same line as code.
+\item However, instead of using a mix of macros like \verb|NUMERIC_VALUE|,
+  \verb|INTEGER_VALUE|, \texttt{NUMERIC\_POINTER} and so on, we have consistent
+  use of \pkg{Rcpp} template function \verb|as| with template types
+  corresponding to base typed \verb|int|, \verb|double| etc. Also of note is
+  how one matrix object (for an initial population of parameter values) is
+  initialized directly from a parameter.
+\item Paremeter lookup is by a string value but done using \pkg{Rcpp} lookup
+  of elements in the \verb|list| type (which corresponds to the \proglang{R}
+  list passed in) rather than via a (similar but ad-hoc) function
+  \verb|getListElement| that hence is not longer needed in \pkg{RcppDE}.
+\item Here as in later code examples, care was taken to ensure that variable
+  names and types correpond closely between both variants.
+\end{enumerate}
+
+\paragraph{Part 2: Middle of \texttt{DEoptim()}} The second part,
+displayed in figure~\ref{fig:deoptim_memory}, allocates dynamic memory for
+both paraneters returned to \proglang{R} as well as for temporary objects
+required to store the results of intermediate computations.  Again, panel A
+shows the \proglang{C} code from \pkg{Rcpp} whereas panel B displays the
+\proglang{C++} code.  One difference becomes immediately apparent: the lack
+of proper matrix or vector types in \proglang{C}. We use the classes from the
+\pkg{Armadillo} \proglang{C++} library written by
+\cite{Sanderson:2010:Armadillo} and provided via the \proglang{R} package
+\pkg{Armadillo} by \citet{CRAN:RcppArmadillo}.
+\begin{enumerate}
+\item Matrix objects are created in \proglang{C} by first allocating a vector
+  of pointers to pointers, which is followed by a loop in which each each
+  column is allocated as vector of approrpriate length.
+\item In \proglang{C++}, allocating a matrix is a single statement. Memory is
+  managed by reference counting and is freed when objects go out of
+  scope. This removes a \textsl{significant} portion of programmer errors.
+\item Another subtle difference is in the allocations of the container
+  holding different population snapshots, here called \texttt{d\_storepop}:
+  \pkg{Rcpp} lets us create a list object in which we store matrices, just as
+  would in \proglang{R} whereas the \proglang{C} construct is much more
+  complicated as we will see below.
+\end{enumerate}
+
+\paragraph{Part 3: End of \texttt{DEoptim()}} The third and last part of
+\verb|DEoptim()| covers the actual call of the worker function \verb|devol()|
+and the preparation of return values for \proglang{R}.
+
+\begin{enumerate}
+\item The \verb|devol()| function is called: as we aim to maintainer
+  interfaces, the is unchanged between both approaches shown in
+  figure~\ref{fig:deoptim_end}.
+\item The code following the function call is very different.  The new
+  version saves in at least three ways:
+  \begin{enumerate}
+  \item No need to create new temporary variables just to convert to
+    \texttt{SEXP} types for return to \proglang{R} as the \pkg{Rcpp} takes
+    care of this.
+  \item No need to allocate memory for new temporary variables (as we do not
+    need these variables, and even if we did memory allocation would be implicit).
+  \item No need to \texttt{PROTECT} and later \texttt{UNPROTECT} such dynamoc
+    memory allocations (because this is handled automatically behind the scenes).
+  \item No need for an explicit new list object to hold the eight return variables.
+  \item No need to (explicitly) assign names for these eight return
+    variables.
+  \end{enumerate}
+\item Rather, a mere two statements are executed: the call to \verb|devol()|
+  followed by single call to create a return object as a list with named
+  elements which are simply inserted---just like we would in \proglang{R} itself.
+\item The remaining code takes care of exception handling by providing to
+  \verb|catch()| branches. These either forward a recognised exception to
+  \proglang{R} or in case of recognised exception signal a generic error.
+\end{enumerate}
+
+In sum, we see how a number of (possibly small) enhancements taken together
+permit us to a function which is considerably shorter and easier to read, yet
+fully equivalent in terms of its functionality.
+
 \subsection[de4_0.c and devol.cpp]{\code{de4\_0.c} and \code{devol.cpp}}
 
+The \verb|devol()| function is the key part of the \pkg{DEoptim}
+implementation. It is also by far the largest function.  We will discuss it
+again in different sections, each corresponding to one figure ranging from
+figure~\ref{fig:devol_start} to figure~\ref{fig:devol_return}.
+
+\paragraph{Part 1: Start of \texttt{devol()}} The first part concerns the
+beginning of the \verb|devol()|. The display (in
+figure~\ref{fig:devol_start}) of panels A and B differs mostly in minor
+ascpects:
+\begin{enumerate}
+\item The \proglang{C} version contains a declaration of a number of loop
+  variable that are either not needed at all in the \proglang{C++} version,
+  or declared locally.
+\item The urn depth is defined as a \proglang{C} macro and a constant
+  variable, respectively.
+\item The \proglang{C++} version has an additional short block to set up the
+  proper evaluation class for the user supplied function, depending on
+  whether an external pointer object is passed (in which case we expect a
+  compiled functin) or not in which case an \proglang{R} routine is used,
+  just like in \pkg{DEoptim}.
+\end{enumerate}
+
+\paragraph{Part 2: Initializations in \texttt{devol()}} The second part of
+\verb|devol()| deals with the creation and initialization of a number of
+variables.  The \proglang{C} language code in panel A is vastly more verbose
+and longer than the \proglang{C++} code in panel B. As shown in
+figure~\ref{fig:devol_init}, key differences are:
+\begin{enumerate}
+\item Initialization of matrices to zero values uses two explicit loops in
+  the \proglang{C} version.\footnote{The \texttt{memset()} function could be
+    used in the \proglang{C} version ot avoid the loops for a direct
+    performance gain.}  In \proglang{C++}, we simply use the member function
+  \verb|zeros()| provided by the \pkg{Armadillo} library.
+\item In panel B for the \proglang{C++} case, the initial population in
+  variable \texttt{initialpopm} is transposed in the \proglang{C++}
+  example. We keep each population as a \textsl{column} rather than a
+  \textsl{row} as memory can generally be accessed faster column-wise.
+\item The actual initialization of the first population is very comparable;
+  in particular the \proglang{R} random number generator is called in the
+  exact same sequence so that results are in fact identical.
+\item The initial population evaluation occurs with a call to
+  \verb|evaluate()| in the original version, and a call of the member
+  function of the evaluation class which will call either the supplied
+  compiled function, or the supplied \proglang{R} functions.
+\end{enumerate}
+
+\paragraph{Part 3: Iteration loop setup and start of population loop in \texttt{devol()}} 
+
+The next part of \verb|devol()|, shown in
+figure~\ref{fig:devol_iter}, is already inside the large outer loop over all iterations.
+
+Similar to the discussion above, the new code is shorter in large part of
+more compact matrix expressions. Other difference are:
+\begin{enumerate}
+\item Intermediate populations are stored directly in a list, after being
+  transposed to account for our design choice of operating column-wise. In
+  the \proglang{C} code, the matrices are somewhat awkwardly `serialised'
+  into a single vector using a counter that incremened position by position.
+\item Several other vector copies are excecuted in a single statement rather
+  than in an explicit loop.
+\item At the beginning of the population loop, a vector is once more stored
+  in a temporary variable and the permuation algoritm is called to pick
+  suitable indices which will be used next.
+\end{enumerate}
+
+\paragraph{Part 4: First four population strategies in  \texttt{devol()}} 
+
+Evaluating each population member based on the user-selected strategies is
+detailed in figure~\ref{fig:devol_first_four}. There are only fairly minor differences
+between both version as shown by panels A and B:
+\begin{enumerate}
+\item Instead of \verb|if/else| branches, the new version uses a
+  \verb|switch| statement.
+\item The case-invariant initialization of \verb|k| has been moved before the
+  block.
+\end{enumerate}
+
+\paragraph{Part 5: Remaining three population strategies in  \texttt{devol()}} 
+
+For the three remaining strategies, the code in panels A and B of
+figure~\ref{fig:devol_other_three} is similar to the code in
+\ref{fig:devol_first_four}.
+
+\paragraph{Part 6: End of population loop in  \texttt{devol()}} 
+
+Figure~\ref{fig:devol_end_pop}
+
+\paragraph{Part 7: Special case of \texttt{bs} flag in  \texttt{devol()}} 
+
+Figure~\ref{fig:devol_bs_flag}
+
+\paragraph{Part 8: End  of  \texttt{devol()}} 
+
+Figure~\ref{fig:devol_return}
+
 \subsection[Evaluation functions in R and C++]{Evaluation functions in \proglang{R} and \proglang{C++}}
+
+\section[R changes]{\proglang{R} changes}
+\label{sec:Rchanges}
 
 \section{Auxiliary files}
 
@@ -217,273 +425,6 @@ TBD
 
 
 \section*{Appendix}
-
-%% R functions
-
-\begin{sidewaysfigure}          % fig R1: beginning of DEoptim()
-  \begin{minipage}{0.48\linewidth}
-    \tiny
-    \begin{CodeChunk}
-      \begin{CodeInput}
-DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
-  fn1  <- function(par) fn(par, ...)
-  if (length(lower) != length(upper))
-    stop("'lower' and 'upper' are not of same length")
-  if (!is.vector(lower))
-    lower <- as.vector(lower)
-  if (!is.vector(upper))
-    upper <- as.vector(upper)
-  if (any(lower > upper))
-    stop("'lower' > 'upper'")
-  if (any(lower == "Inf"))
-    warning("you set a component of 'lower' to 'Inf'. May imply 'NaN' results", immediate. = TRUE)
-  if (any(lower == "-Inf"))
-    warning("you set a component of 'lower' to '-Inf'. May imply 'NaN' results", immediate. = TRUE)
-  if (any(upper == "Inf"))
-    warning("you set a component of 'upper' to 'Inf'. May imply 'NaN' results", immediate. = TRUE)
-  if (any(upper == "-Inf"))
-    warning("you set a component of 'upper' to '-Inf'. May imply 'NaN' results", immediate. = TRUE)
-  if (!is.null(names(lower)))
-    nam <- names(lower)
-  else if (!is.null(names(upper)) & is.null(names(lower)))
-    nam <- names(upper)
-  else
-    nam <- paste("par", 1:length(lower), sep = "")
-
-  ctrl <- do.call(DEoptim.control, as.list(control))
-  ctrl$npar <- length(lower)
-  if (ctrl$NP < 4) {
-    warning("'NP' < 4; set to default value 50\n", immediate. = TRUE)
-    ctrl$NP <- 50
-  }
-  if (ctrl$NP < 10*length(lower)) 
-    warning("For many problems it is best to set 'NP' (in 'control') to be at least "
-            "ten times the length of the parameter vector. \n", immediate. = TRUE)
-  if (!is.null(ctrl$initialpop)) {
-    ctrl$specinitialpop <- TRUE
-    if(!identical(as.numeric(dim(ctrl$initialpop)), c(ctrl$NP, ctrl$npar)))
-      stop("Initial population is not a matrix with dim. NP x length(upper).")
-  }
-  else {
-    ctrl$specinitialpop <- FALSE
-    ctrl$initialpop <- 0.0
-  }
-  ##
-  ctrl$trace <- as.numeric(ctrl$trace)
-  ctrl$specinitialpop <- as.numeric(ctrl$specinitialpop)
-  ctrl$initialpop <- as.numeric(ctrl$initialpop)
-      \end{CodeInput}
-    \end{CodeChunk}
-
-    \normalsize 
-    \centering{Panel A: \proglang{R} version in \pkg{DEoptim}}
-    \tiny 
-
-  \end{minipage}
-  \begin{minipage}{0.03\linewidth}
-    \phantom{XX}
-  \end{minipage}
-  \begin{minipage}{0.48\linewidth}
-    \tiny
-
-    \begin{CodeChunk}
-      \begin{CodeInput}
-DEoptim <- function(fn, lower, upper, control = DEoptim.control(), env, ...) {
-  ##fn1  <- function(par) fn(par, ...)
-  if (length(lower) != length(upper))
-    stop("'lower' and 'upper' are not of same length")
-  if (!is.vector(lower))
-    lower <- as.vector(lower)
-  if (!is.vector(upper))
-    upper <- as.vector(upper)
-  if (any(lower > upper))
-    stop("'lower' > 'upper'")
-  if (any(lower == "Inf"))
-    warning("you set a component of 'lower' to 'Inf'. May imply 'NaN' results", immediate. = TRUE)
-  if (any(lower == "-Inf"))
-    warning("you set a component of 'lower' to '-Inf'. May imply 'NaN' results", immediate. = TRUE)
-  if (any(upper == "Inf"))
-    warning("you set a component of 'upper' to 'Inf'. May imply 'NaN' results", immediate. = TRUE)
-  if (any(upper == "-Inf"))
-    warning("you set a component of 'upper' to '-Inf'. May imply 'NaN' results", immediate. = TRUE)
-  if (!is.null(names(lower)))
-    nam <- names(lower)
-  else if (!is.null(names(upper)) & is.null(names(lower)))
-    nam <- names(upper)
-  else
-    nam <- paste("par", 1:length(lower), sep = "")
-  if (missing(env))
-    env <- new.env()
-
-  ctrl <- do.call(DEoptim.control, as.list(control))
-  ctrl$npar <- length(lower)
-  if (ctrl$NP < 4) {
-    warning("'NP' < 4; set to default value 50\n", immediate. = TRUE)
-    ctrl$NP <- 50
-  }
-  if (ctrl$NP < 10*length(lower))
-    warning("For many problems it is best to set 'NP' (in 'control') to be at least ten"
-            " times the length of the parameter vector. \n", immediate. = TRUE)
-  if (!is.null(ctrl$initialpop)) {
-    ctrl$specinitialpop <- TRUE
-    if(!identical(as.numeric(dim(ctrl$initialpop)), c(ctrl$NP, ctrl$npar)))
-      stop("Initial population is not a matrix with dim. NP x length(upper).")
-  }
-  else {
-    ctrl$specinitialpop <- FALSE
-    ctrl$initialpop <- matrix(0,1,1)    # dummy matrix
-  }
-  ##
-  ctrl$trace <- as.numeric(ctrl$trace)
-  ctrl$specinitialpop <- as.numeric(ctrl$specinitialpop)
-      \end{CodeInput}
-    \end{CodeChunk}
- 
-    \normalsize
-    \centering{Panel B: \proglang{R} version in \pkg{RcppDE}}
-   \end{minipage}
-  \caption{First half of \proglang{R} function \texttt{DEoptim()}}
-  \label{fig:fig_R_DEoptim1}
-\end{sidewaysfigure}
-
-\begin{sidewaysfigure}          % fig R2: second half of DEoptim()
-  \begin{minipage}{0.48\linewidth}
-    \tiny
-    \begin{CodeChunk}
-      \begin{CodeInput}
-  outC <- .Call("DEoptimC", lower, upper, fn1, ctrl, new.env(),
-               PACKAGE = "DEoptim")
-  ##
-  if (length(outC$storepop) > 0) {
-    nstorepop <- floor((outC$iter - ctrl$storepopfrom) / ctrl$storepopfreq)
-    storepop <- list()
-    cnt <- 1
-    for(i in 1:nstorepop) {
-      idx <- cnt:((cnt - 1) + (ctrl$NP * ctrl$npar))
-      storepop[[i]] <- matrix(outC$storepop[idx], nrow = ctrl$NP, ncol = ctrl$npar,
-                         byrow = TRUE)
-      cnt <- cnt + (ctrl$NP * ctrl$npar)
-      dimnames(storepop[[i]]) <- list(1:ctrl$NP, nam)
-    }
-  }
-  else {
-    storepop = NULL
-  }
-
-  ## optim
-  bestmem <- as.numeric(outC$bestmem)
-  names(bestmem) <- nam
-  bestval <- as.numeric(outC$bestval)
-  nfeval <- as.numeric(outC$nfeval)
-  iter <- as.numeric(outC$iter)
-
-  ## member
-  names(lower) <- names(upper) <- nam
-  bestmemit <- matrix(outC$bestmemit, nrow = iter, 
-                      ncol = ctrl$npar, byrow = TRUE)
-
-  dimnames(bestmemit) <- list(1:iter, nam)
-  bestvalit <- as.numeric(outC$bestvalit[1:iter])
-  pop <- matrix(outC$pop, nrow = ctrl$NP, ncol = ctrl$npar,
-                byrow = TRUE)
-  storepop <- as.list(storepop)
-
-  outR <- list(optim = list(
-              bestmem = bestmem,
-              bestval = bestval,
-              nfeval = nfeval,
-              iter = iter),
-            member = list(
-              lower = lower,
-              upper = upper,
-              bestmemit = bestmemit,
-              bestvalit = bestvalit,
-              pop = pop,
-              storepop = storepop))
-
-  attr(outR, "class") <- "DEoptim"
-  return(outR)
-}
-      \end{CodeInput}
-    \end{CodeChunk}
-
-    \normalsize 
-    \centering{Panel A: \proglang{R} version in \pkg{DEoptim}}
-    \tiny 
-
-  \end{minipage}
-  \begin{minipage}{0.03\linewidth}
-    \phantom{XX}
-  \end{minipage}
-  \begin{minipage}{0.48\linewidth}
-    \tiny
-
-    \begin{CodeChunk}
-      \begin{CodeInput}
-  outC <- .Call("DEoptim", lower, upper, fn, ctrl, env, PACKAGE = "RcppDE")
-  ##
-  if (length(outC$storepop) > 0) {
-    nstorepop <- floor((outC$iter - ctrl$storepopfrom) / ctrl$storepopfreq)
-    ## storepop <- list()
-    ## cnt <- 1
-    ## for(i in 1:nstorepop) {
-    ##   idx <- cnt:((cnt - 1) + (ctrl$NP * ctrl$npar))
-    ##   storepop[[i]] <- matrix(outC$storepop[idx], nrow = ctrl$NP, ncol = ctrl$npar,
-    ##                      byrow = TRUE)
-    ##   cnt <- cnt + (ctrl$NP * ctrl$npar)
-    ##   dimnames(storepop[[i]]) <- list(1:ctrl$NP, nam)
-    ## }
-    storepop <- outC$storepop[1:nstorepop]
-    for (i in 1:length(storepop)) dimnames(storepop[[i]]) <- list(1:ctrl$NP, nam)
-  }
-  else {
-    storepop = NULL
-  }
-
-  ## optim
-  bestmem <- as.numeric(outC$bestmem)
-  names(bestmem) <- nam
-  bestval <- as.numeric(outC$bestval)
-  nfeval <- as.numeric(outC$nfeval)
-  iter <- as.numeric(outC$iter)
-
-  ## member
-  names(lower) <- names(upper) <- nam
-  #bestmemit <- matrix(outC$bestmemit, nrow = iter, ncol = ctrl$npar, byrow = TRUE)
-  bestmemit <- outC$bestmemit
-
-  dimnames(bestmemit) <- list(1:iter, nam)
-  bestvalit <- as.numeric(outC$bestvalit[1:iter])
-  #pop <- matrix(outC$pop, nrow = ctrl$NP, ncol = ctrl$npar, byrow = TRUE)
-  pop <- outC$pop
-  storepop <- as.list(storepop)
-
-  outR <- list(optim = list(
-              bestmem = bestmem,
-              bestval = bestval,
-              nfeval = nfeval,
-              iter = iter),
-            member = list(
-              lower = lower,
-              upper = upper,
-              bestmemit = bestmemit,
-              bestvalit = bestvalit,
-              pop = pop,
-              storepop = storepop))
-
-  attr(outR, "class") <- "DEoptim"
-  return(outR)
-}
-      \end{CodeInput}
-    \end{CodeChunk}
- 
-    \normalsize
-    \centering{Panel B: \proglang{R} version in \pkg{RcppDE}}
-   \end{minipage}
-  \caption{Second half of \proglang{R} function \texttt{DEoptim()}}
-  \label{fig:fig_R_DEoptim2}
-\end{sidewaysfigure}
-
 
 %% C++ functions
 
@@ -589,7 +530,7 @@ RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP 
     \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
    \end{minipage}
   \caption{Beginning of \code{DEoptim()} \proglang{C/C++} function}
-  \label{fig:deoptim_start1}
+  \label{fig:deoptim_start}
 \end{sidewaysfigure}
 
 \begin{sidewaysfigure}          % fig 2: memory allocations
@@ -926,7 +867,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
   \end{minipage}
   \caption{\code{devol()} beginning}
-  \label{fig:deoptim_end}
+  \label{fig:devol_start}
 \end{sidewaysfigure}
 
 
@@ -1077,7 +1018,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
   \end{minipage}
   \caption{\code{devol()} initializations}
-  \label{fig:deoptim_end}
+  \label{fig:devol_init}
 \end{sidewaysfigure}
 
 
@@ -1184,7 +1125,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \normalsize \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
   \end{minipage}
   \caption{\code{devol()} iteration loop setup and beginning of population loop}
-  \label{fig:deoptim_end}
+  \label{fig:devol_iter}
 \end{sidewaysfigure}
 
 
@@ -1315,7 +1256,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \normalsize \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
   \end{minipage}
   \caption{\code{devol()} first four strategy options}
-  \label{fig:deoptim_end}
+  \label{fig:devol_first_four}
 \end{sidewaysfigure}
 
 
@@ -1446,7 +1387,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \normalsize \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
   \end{minipage}
   \caption{\code{devol()} remaining three strategy options}
-  \label{fig:deoptim_end}
+  \label{fig:devol_other_three}
 \end{sidewaysfigure}
 
 
@@ -1537,7 +1478,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \normalsize \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
   \end{minipage}
   \caption{\code{devol()} remainder of population mutation loop}
-  \label{fig:deoptim_end}
+  \label{fig:devol_end_pop}
 \end{sidewaysfigure}
 
 
@@ -1638,7 +1579,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \normalsize \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
   \end{minipage}
   \caption{\code{devol()} case of \code{i\_bs\_flag}}
-  \label{fig:deoptim_end}
+  \label{fig:devol_bs_flag}
 \end{sidewaysfigure}
 
 
@@ -1765,7 +1706,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \normalsize \centering{Panel B: \proglang{C++} version using \pkg{Rcpp}}
   \end{minipage}
   \caption{\code{devol()} population processing and return preparation}
-  \label{fig:deoptim_end}
+  \label{fig:devol_return}
 \end{sidewaysfigure}
 
 
@@ -1866,8 +1807,279 @@ namespace Rcpp {
   \end{minipage}
   \caption{\code{evaluate()} function versus Evaluation classes permitting
     \proglang{R} and \proglang{C++} objective functions}
-  \label{fig:deoptim_end}
+  \label{fig:evaluate_fun}
 \end{sidewaysfigure}
+
+
+
+%% R functions
+
+\begin{sidewaysfigure}          % fig R1: beginning of DEoptim()
+  \begin{minipage}{0.48\linewidth}
+    \tiny
+    \begin{CodeChunk}
+      \begin{CodeInput}
+DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
+  fn1  <- function(par) fn(par, ...)
+  if (length(lower) != length(upper))
+    stop("'lower' and 'upper' are not of same length")
+  if (!is.vector(lower))
+    lower <- as.vector(lower)
+  if (!is.vector(upper))
+    upper <- as.vector(upper)
+  if (any(lower > upper))
+    stop("'lower' > 'upper'")
+  if (any(lower == "Inf"))
+    warning("you set a component of 'lower' to 'Inf'. May imply 'NaN' results", immediate. = TRUE)
+  if (any(lower == "-Inf"))
+    warning("you set a component of 'lower' to '-Inf'. May imply 'NaN' results", immediate. = TRUE)
+  if (any(upper == "Inf"))
+    warning("you set a component of 'upper' to 'Inf'. May imply 'NaN' results", immediate. = TRUE)
+  if (any(upper == "-Inf"))
+    warning("you set a component of 'upper' to '-Inf'. May imply 'NaN' results", immediate. = TRUE)
+  if (!is.null(names(lower)))
+    nam <- names(lower)
+  else if (!is.null(names(upper)) & is.null(names(lower)))
+    nam <- names(upper)
+  else
+    nam <- paste("par", 1:length(lower), sep = "")
+
+  ctrl <- do.call(DEoptim.control, as.list(control))
+  ctrl$npar <- length(lower)
+  if (ctrl$NP < 4) {
+    warning("'NP' < 4; set to default value 50\n", immediate. = TRUE)
+    ctrl$NP <- 50
+  }
+  if (ctrl$NP < 10*length(lower)) 
+    warning("For many problems it is best to set 'NP' (in 'control') to be at least "
+            "ten times the length of the parameter vector. \n", immediate. = TRUE)
+  if (!is.null(ctrl$initialpop)) {
+    ctrl$specinitialpop <- TRUE
+    if(!identical(as.numeric(dim(ctrl$initialpop)), c(ctrl$NP, ctrl$npar)))
+      stop("Initial population is not a matrix with dim. NP x length(upper).")
+  }
+  else {
+    ctrl$specinitialpop <- FALSE
+    ctrl$initialpop <- 0.0
+  }
+  ##
+  ctrl$trace <- as.numeric(ctrl$trace)
+  ctrl$specinitialpop <- as.numeric(ctrl$specinitialpop)
+  ctrl$initialpop <- as.numeric(ctrl$initialpop)
+      \end{CodeInput}
+    \end{CodeChunk}
+
+    \normalsize 
+    \centering{Panel A: \proglang{R} version in \pkg{DEoptim}}
+    \tiny 
+
+  \end{minipage}
+  \begin{minipage}{0.03\linewidth}
+    \phantom{XX}
+  \end{minipage}
+  \begin{minipage}{0.48\linewidth}
+    \tiny
+
+    \begin{CodeChunk}
+      \begin{CodeInput}
+DEoptim <- function(fn, lower, upper, control = DEoptim.control(), env, ...) {
+  ##fn1  <- function(par) fn(par, ...)
+  if (length(lower) != length(upper))
+    stop("'lower' and 'upper' are not of same length")
+  if (!is.vector(lower))
+    lower <- as.vector(lower)
+  if (!is.vector(upper))
+    upper <- as.vector(upper)
+  if (any(lower > upper))
+    stop("'lower' > 'upper'")
+  if (any(lower == "Inf"))
+    warning("you set a component of 'lower' to 'Inf'. May imply 'NaN' results", immediate. = TRUE)
+  if (any(lower == "-Inf"))
+    warning("you set a component of 'lower' to '-Inf'. May imply 'NaN' results", immediate. = TRUE)
+  if (any(upper == "Inf"))
+    warning("you set a component of 'upper' to 'Inf'. May imply 'NaN' results", immediate. = TRUE)
+  if (any(upper == "-Inf"))
+    warning("you set a component of 'upper' to '-Inf'. May imply 'NaN' results", immediate. = TRUE)
+  if (!is.null(names(lower)))
+    nam <- names(lower)
+  else if (!is.null(names(upper)) & is.null(names(lower)))
+    nam <- names(upper)
+  else
+    nam <- paste("par", 1:length(lower), sep = "")
+  if (missing(env))
+    env <- new.env()
+
+  ctrl <- do.call(DEoptim.control, as.list(control))
+  ctrl$npar <- length(lower)
+  if (ctrl$NP < 4) {
+    warning("'NP' < 4; set to default value 50\n", immediate. = TRUE)
+    ctrl$NP <- 50
+  }
+  if (ctrl$NP < 10*length(lower))
+    warning("For many problems it is best to set 'NP' (in 'control') to be at least ten"
+            " times the length of the parameter vector. \n", immediate. = TRUE)
+  if (!is.null(ctrl$initialpop)) {
+    ctrl$specinitialpop <- TRUE
+    if(!identical(as.numeric(dim(ctrl$initialpop)), c(ctrl$NP, ctrl$npar)))
+      stop("Initial population is not a matrix with dim. NP x length(upper).")
+  }
+  else {
+    ctrl$specinitialpop <- FALSE
+    ctrl$initialpop <- matrix(0,1,1)    # dummy matrix
+  }
+  ##
+  ctrl$trace <- as.numeric(ctrl$trace)
+  ctrl$specinitialpop <- as.numeric(ctrl$specinitialpop)
+      \end{CodeInput}
+    \end{CodeChunk}
+ 
+    \normalsize
+    \centering{Panel B: \proglang{R} version in \pkg{RcppDE}}
+   \end{minipage}
+  \caption{First half of \proglang{R} function \texttt{DEoptim()}}
+  \label{fig:fig_R_DEoptim1}
+\end{sidewaysfigure}
+
+\begin{sidewaysfigure}          % fig R2: second half of DEoptim()
+  \begin{minipage}{0.48\linewidth}
+    \tiny
+    \begin{CodeChunk}
+      \begin{CodeInput}
+  outC <- .Call("DEoptimC", lower, upper, fn1, ctrl, new.env(),
+               PACKAGE = "DEoptim")
+  ##
+  if (length(outC$storepop) > 0) {
+    nstorepop <- floor((outC$iter - ctrl$storepopfrom) / ctrl$storepopfreq)
+    storepop <- list()
+    cnt <- 1
+    for(i in 1:nstorepop) {
+      idx <- cnt:((cnt - 1) + (ctrl$NP * ctrl$npar))
+      storepop[[i]] <- matrix(outC$storepop[idx], nrow = ctrl$NP, ncol = ctrl$npar,
+                         byrow = TRUE)
+      cnt <- cnt + (ctrl$NP * ctrl$npar)
+      dimnames(storepop[[i]]) <- list(1:ctrl$NP, nam)
+    }
+  }
+  else {
+    storepop = NULL
+  }
+
+  ## optim
+  bestmem <- as.numeric(outC$bestmem)
+  names(bestmem) <- nam
+  bestval <- as.numeric(outC$bestval)
+  nfeval <- as.numeric(outC$nfeval)
+  iter <- as.numeric(outC$iter)
+
+  ## member
+  names(lower) <- names(upper) <- nam
+  bestmemit <- matrix(outC$bestmemit, nrow = iter, 
+                      ncol = ctrl$npar, byrow = TRUE)
+
+  dimnames(bestmemit) <- list(1:iter, nam)
+  bestvalit <- as.numeric(outC$bestvalit[1:iter])
+  pop <- matrix(outC$pop, nrow = ctrl$NP, ncol = ctrl$npar,
+                byrow = TRUE)
+  storepop <- as.list(storepop)
+
+  outR <- list(optim = list(
+              bestmem = bestmem,
+              bestval = bestval,
+              nfeval = nfeval,
+              iter = iter),
+            member = list(
+              lower = lower,
+              upper = upper,
+              bestmemit = bestmemit,
+              bestvalit = bestvalit,
+              pop = pop,
+              storepop = storepop))
+
+  attr(outR, "class") <- "DEoptim"
+  return(outR)
+}
+      \end{CodeInput}
+    \end{CodeChunk}
+
+    \normalsize 
+    \centering{Panel A: \proglang{R} version in \pkg{DEoptim}}
+    \tiny 
+
+  \end{minipage}
+  \begin{minipage}{0.03\linewidth}
+    \phantom{XX}
+  \end{minipage}
+  \begin{minipage}{0.48\linewidth}
+    \tiny
+
+    \begin{CodeChunk}
+      \begin{CodeInput}
+  outC <- .Call("DEoptim", lower, upper, fn, ctrl, env, PACKAGE = "RcppDE")
+  ##
+  if (length(outC$storepop) > 0) {
+    nstorepop <- floor((outC$iter - ctrl$storepopfrom) / ctrl$storepopfreq)
+    ## storepop <- list()
+    ## cnt <- 1
+    ## for(i in 1:nstorepop) {
+    ##   idx <- cnt:((cnt - 1) + (ctrl$NP * ctrl$npar))
+    ##   storepop[[i]] <- matrix(outC$storepop[idx], nrow = ctrl$NP, ncol = ctrl$npar,
+    ##                      byrow = TRUE)
+    ##   cnt <- cnt + (ctrl$NP * ctrl$npar)
+    ##   dimnames(storepop[[i]]) <- list(1:ctrl$NP, nam)
+    ## }
+    storepop <- outC$storepop[1:nstorepop]
+    for (i in 1:length(storepop)) dimnames(storepop[[i]]) <- list(1:ctrl$NP, nam)
+  }
+  else {
+    storepop = NULL
+  }
+
+  ## optim
+  bestmem <- as.numeric(outC$bestmem)
+  names(bestmem) <- nam
+  bestval <- as.numeric(outC$bestval)
+  nfeval <- as.numeric(outC$nfeval)
+  iter <- as.numeric(outC$iter)
+
+  ## member
+  names(lower) <- names(upper) <- nam
+  #bestmemit <- matrix(outC$bestmemit, nrow = iter, ncol = ctrl$npar, byrow = TRUE)
+  bestmemit <- outC$bestmemit
+
+  dimnames(bestmemit) <- list(1:iter, nam)
+  bestvalit <- as.numeric(outC$bestvalit[1:iter])
+  #pop <- matrix(outC$pop, nrow = ctrl$NP, ncol = ctrl$npar, byrow = TRUE)
+  pop <- outC$pop
+  storepop <- as.list(storepop)
+
+  outR <- list(optim = list(
+              bestmem = bestmem,
+              bestval = bestval,
+              nfeval = nfeval,
+              iter = iter),
+            member = list(
+              lower = lower,
+              upper = upper,
+              bestmemit = bestmemit,
+              bestvalit = bestvalit,
+              pop = pop,
+              storepop = storepop))
+
+  attr(outR, "class") <- "DEoptim"
+  return(outR)
+}
+      \end{CodeInput}
+    \end{CodeChunk}
+ 
+    \normalsize
+    \centering{Panel B: \proglang{R} version in \pkg{RcppDE}}
+   \end{minipage}
+  \caption{Second half of \proglang{R} function \texttt{DEoptim()}}
+  \label{fig:fig_R_DEoptim2}
+\end{sidewaysfigure}
+
+
+
 
 
 \end{document}
