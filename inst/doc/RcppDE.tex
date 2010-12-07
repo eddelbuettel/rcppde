@@ -400,24 +400,95 @@ figure~\ref{fig:devol_other_three} is similar to the code in
 
 \paragraph{Part 6: End of population loop in  \texttt{devol()}} 
 
-Figure~\ref{fig:devol_end_pop}
+Figure~\ref{fig:devol_end_pop} contains two fairly short segments that are
+entered once within each iteration ater the loop over all population elements
+has finished.  The two code segments in panels A and B of
+figure~\ref{fig:devol_end_pop}  are fairly equivalent, with the one
+difference once again the element-by-element copy of vector elements (in
+\proglang{C}) versus the single statement using \proglang{C++} objects.
 
 \paragraph{Part 7: Special case of \texttt{bs} flag in  \texttt{devol()}} 
 
-Figure~\ref{fig:devol_bs_flag}
+Simlarly, figure~\ref{fig:devol_bs_flag} once more shows difference chiefly
+due to the way interim solutions are copied. Panel A has a full nine loops
+for copying vector or matrix elements which are not needed in panel B.  We
+should note that this code is executed only when the user has changed the
+default value of false for the \texttt{bs} option in the control list for
+\texttt{DEoptim()}. 
 
 \paragraph{Part 8: End  of  \texttt{devol()}} 
 
-Figure~\ref{fig:devol_return}
+Figure~\ref{fig:devol_return} contains the final portion of the
+\verb|devol()| function. The population and its fitness value are saved. If
+the \texttt{checkWinner} of the control structure has been changed from the
+default value of false, a possible re-evaluation of the best population
+occurs and values are updated.  
+
+Next, if tracing is enabling and the iteration counter has a matching value,
+updates are printed before a few state variables are updated and the function
+returns after restoring the state of the random number generator.
+
 
 \subsection[Evaluation functions in R and C++]{Evaluation functions in \proglang{R} and \proglang{C++}}
+
+Figure~\ref{fig:evaluate_fun} is the rare exception: the new code from
+\pkg{RcppDE} is much longer than old code it replaces.  This is due to the
+main extension between \pkg{DEoptim} and \pkg{RcppDE} it provides: the
+ability to supply not only an \proglang{R} function to describe the objective
+function to be minimmized---but also a compiled function.
+
+This is implemented by means of so-called abstract base class
+\texttt{EvalBase}. This is an empty class no containing code, but providing
+an interface (containing of two public functions \texttt{eval()} and
+\texttt{getNbEvals()}) that is then filled in.  
+Here, we have two classed deriving from the abstract base class: one each for
+the \proglang{R} and the \proglang{C++} function.  
+
+The class \texttt{EvalStandard} in panel B correspond most closely to the
+normal \texttt{evaluate()} in panel A. A function call with a set of
+parameters is prepared and the evaluated in an environment. Here, the
+function and the environment are supplied once at the beginning---and hence
+used to instantiate the class.  Each evaluation then brings a new parameter
+vector. 
+
+The class \texttt{EvalCompiled} does the same, but not for the compiled
+function that we access via an external pointer. The support for external
+pointer types via type \texttt{XPtr} class in \pkg{Rcpp} was instrumental in
+implementing this.  Similar to the standard case, the function is supplied at
+the beginning to instantiate the class.  Later, on each evaluation call a new
+parameter vector is supplied.
 
 \section[R changes]{\proglang{R} changes}
 \label{sec:Rchanges}
 
+Figures~\ref{fig:fig_R_DEoptim1} and \ref{fig:fig_R_DEoptim2}
+display the main \proglang{R} function \texttt{DEoptim()}.
+A few changes have been made:
+\begin{enumerate}
+\item Population matrices are passed from \proglang{C++} to \proglang{R} as
+  matrix objects; no copy or rearrangement has to be undertaken.  This saves
+  a block of code at the top of panel B in figure~\ref{fig:fig_R_DEoptim2}.
+  Similarly, we do not have cast the population matrix as we already obtain a
+  matrix. 
+\item \pkg{DEoptim} support variable arguments in the \texttt{R} function.
+  For symmetry with the compiled function, we support just a standard
+  vector.  However, the environment in which the function and parameters are
+  evaluated can also be supplied by the user (whereas \pkg{DEoptim} always
+  creates a new environment.
+\end{enumerate}
+
 \section{Auxiliary files}
 
+TODO tests/compTests.R
+
+TODO Demo files
+TODO scripts/* using demo
+
 \section{Performance}
+
+TODO just in R
+
+TODO compiled
 
 \section{Summary}
 
@@ -1448,30 +1519,30 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
     \begin{CodeChunk}
       \begin{CodeInput}
-	    for (int j = 0; j < i_D; j++) {	// boundary constraints, bounce-back method was not enforcing bounds 
-		if (t_tmpP[j] < fa_minbound[j]) {
-		    t_tmpP[j] = fa_minbound[j] + ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
-		}
-		if (t_tmpP[j] > fa_maxbound[j]) {
-		    t_tmpP[j] = fa_maxbound[j] - ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
-		}
-	    }
+            for (int j = 0; j < i_D; j++) {     // boundary constr., bounce-back meth. not enforcing bounds 
+                if (t_tmpP[j] < fa_minbound[j]) {
+                    t_tmpP[j] = fa_minbound[j] + ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
+                }
+                if (t_tmpP[j] > fa_maxbound[j]) {
+                    t_tmpP[j] = fa_maxbound[j] - ::unif_rand() * (fa_maxbound[j] - fa_minbound[j]);
+                }
+            }
 
-	    // ------Trial mutation now in t_tmpP-----------------
-	    memcpy(REAL(par), t_tmpP.memptr(), Rf_nrows(par) * sizeof(double));      
-	    double t_tmpC = ev->eval(par);				// Evaluate mutant in t_tmpP
-	    if (t_tmpC <= ta_oldC[i] || i_bs_flag) {	    		// i_bs_flag means will choose best NP later
-		ta_newP.col(i) = t_tmpP;				// replace target with mutant 
-		ta_newC[i] = t_tmpC;
-		if (t_tmpC <= t_bestC) {
-		    t_bestP = t_tmpP;
-		    t_bestC = t_tmpC;
-		}
-	    } else {
-		ta_newP.col(i) = ta_oldP.col(i);
-		ta_newC[i] = ta_oldC[i];
-	    }
-	} // End mutation loop through pop., ie the "for (i = 0; i < i_NP; i++)"
+            // ------Trial mutation now in t_tmpP-----------------
+            memcpy(REAL(par), t_tmpP.memptr(), Rf_nrows(par) * sizeof(double));      
+            double t_tmpC = ev->eval(par);              // Evaluate mutant in t_tmpP
+            if (t_tmpC <= ta_oldC[i] || i_bs_flag) {    // i_bs_flag means will choose best NP later
+                ta_newP.col(i) = t_tmpP;                // replace target with mutant 
+                ta_newC[i] = t_tmpC;
+                if (t_tmpC <= t_bestC) {
+                    t_bestP = t_tmpP;
+                    t_bestC = t_tmpC;
+                }
+            } else {
+                ta_newP.col(i) = ta_oldP.col(i);
+                ta_newC[i] = ta_oldC[i];
+            }
+        } // End mutation loop through pop., ie the "for (i = 0; i < i_NP; i++)"
       \end{CodeInput}
     \end{CodeChunk}
     
@@ -1676,7 +1747,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
                 i_xav++;
                 memcpy(REAL(par), t_bestP.memptr(), Rf_nrows(par) * sizeof(double));      
                 double tmp_best = ev->eval(par);// if re-evaluation of winner 
-                if (i_av_winner)                //  possibly letting the winner be the average of all past generations 
+                if (i_av_winner)         //  poss. letting winner be avg of all past generations 
                     t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + 
                         (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
                 else
