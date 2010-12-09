@@ -1,7 +1,8 @@
 %% use JSS class but for now with nojss option
 \documentclass[nojss,shortnames,article]{jss}
 \usepackage{rotating}
-\usepackage{float}
+%\usepackage{float}
+\usepackage{flafter}
 \usepackage{booktabs}
 
 \author{Dirk Eddelbuettel\\Debian Project} % \And Second Author\\Plus Affiliation}
@@ -78,8 +79,8 @@ particular suitable for real-valued optimisation problems.
 being used to optimise problems from a wide range of problem domains ranging
 from crystallography \citep{MullenKrayzmanLevin:2010:Atomic} to agricultural
 economics \citep{BoernerHigginsKantelhardt:2007:Rainfall} and computational
-finance \citep{BoudtPetersonCarl:2008:HFPortfolio}. It is also being by two
-other CRAN packages for R: \pkg{micEconCES} \citep{CRAN:micEconCES} and
+finance \citep{BoudtPetersonCarl:2008:HFPortfolio}. It is also being used by
+two other CRAN packages for R: \pkg{micEconCES} \citep{CRAN:micEconCES} and
 \pkg{selectMeta} \citep{CRAN:selectMeta}.
 
 The present paper introduces the \proglang{R} package \pkg{RcppDE}. It
@@ -102,17 +103,20 @@ language. These goals were loosely defined as follows:
 \item[shorter] replacing code that is by necessity somewhat verbose when
   written in \proglang{C} with more compact code written in \proglang{C++}:
   an example would be copying of a matrix which is implemented as a dual loop
-  copying each element --- whereas \proglang{C++} allows us to use a single
+  copying each element---whereas \proglang{C++} allows us to use a single
   (overloaded) \verb|+| operator and hence a single statement;
-\item[easier] this is a corollary to the previous point but also covers
-  aspect as the automatic type conversion offered by \pkg{Rcpp} as well as
-  the automatic memory management: by replacing allocation and freeing of
-  heap-based dynamic memory, a conistent source of programmer error would be
-  elimnated; 
-\item[faster] this was a bit more of a conjecture as ultimately,
+\item[easier] this may appear as a corollary to the previous point but really
+  covers other aspects such as the automatic type conversion offered by
+  \pkg{Rcpp} as well as the automatic memory management: by replacing
+  allocation and freeing of heap-based dynamic memory, a consistent source of
+  programmer error would be elimnated---plus we are not trying `short and
+  incomprehensible' in the APL-sense but aim for possible improvements on
+  \textsl{both} the length and the ease of comprehension without trading one
+  off against the other;
+\item[faster] this may be a bit more of a conjecture as ultimately,
   \proglang{C++} and \proglang{C} can be expected to be roughly equivalent
   given matching compiler versions etc; however gains maybe be expected from
-  replacing a copying operation of block of adjacent memory cells with a
+  replacing a copying operation of a block of adjacent memory cells with a
   single \verb|memcpy()| call done behind the scenes; \pkg{RcppArmadillo}
   also offers further possible gains from template metaprogramming which can
   result in the elimination of temporary object in complex expression where,
@@ -121,9 +125,9 @@ language. These goals were loosely defined as follows:
 \end{itemize}
 
 This paper is organised as follows. The next sections describes the structure
-of \pkg{DEoptim} which \pkg{RcppDE} shadows closesly. The following twp
-section compares differences at the \proglang{R} and \proglang{C++} level,
-respectively. Next, we changes in auxiliarry files are discusses before a
+of \pkg{DEoptim} which \pkg{RcppDE} shadows closesly. The following two
+section compare differences at the \proglang{R} and \proglang{C++} level,
+respectively. Next, changes in auxiliarry files are discussed before a
 short section reviews perfomance changes. A summary concludes. The
 appendix contains a list of figures contrasting the two implementations.
 
@@ -133,36 +137,23 @@ appendix contains a list of figures contrasting the two implementations.
 functionality is provided by three \proglang{R} files, as well as three
 \proglang{C} files.
 
-Many more changes were made to the \proglang{C} files: besides the obvious
-porting from \proglang{C} to \proglang{C++}, several internal code changes
-were made.  The overall architecture and API remained as unchanged as
-possible.  
+In the transition \pkg{DEoptim} from to \pkg{RcppDE} many more changes were
+made to the \proglang{C} files: besides the obvious porting from \proglang{C}
+to \proglang{C++}, several internal code changes were made.  We discuss these
+changes below.  An important point to note is that the overall architecture
+and API remain as unchanged as possible.  
 %
 On the other hand, very few changes were required at the \proglang{R}
-level. The user-facing side of \pkg{DEoptim} persists virtually unchanged.  
+level. The user-facing side of \pkg{DEoptim} persists virtually unchanged
+(with one or two changes discussed below).  
 
 Because of the dominant number of changes at the level of the compiled
-language, we discuss the structure, and later on changes, first before
-turning to the \proglang{R} side.
+languages, we discuss the structure, and later on changes, of this part first
+before turning to the \proglang{R} side.
 
 \subsection[C / C++ structure and changes]{\proglang{} / \proglang{C++} structure and changes}
 
-Table~\ref{tab:Cfiles} lists the \proglang{C} and \proglang{C++}
-files in \pkg{DEoptim} and \pkg{RcppDE}, respectively. 
-The large file \verb|de4_0.c| has been split into three files: one each for
-the core functions \verb|DEoptim()| (which is called from \proglang{R}),
-\verb|devol()| (which is the core differential evolution optimisation
-routine) and \verb|permute()| (which is a helper function used to shuffle
-indices).  
-
-The evalution function has been replaced by a base class and two virtual
-classes. These can now use of an objective function written in \proglang{R}
-(as in \pkg{DEoptim}) as well as one written in \proglang{C++} which can lead
-to substantial speed improvements.  Section~\ref{sec:Cppchanges} discusses
-these changes in more detail.
-
-
-\begin{table}[tb]
+\begin{table}[htb]
   \begin{center}
     \begin{tabular}{lrclr}
       \toprule
@@ -182,6 +173,21 @@ these changes in more detail.
     \label{tab:Cfiles}
   \end{center}
 \end{table}
+
+Table~\ref{tab:Cfiles} lists the \proglang{C} and \proglang{C++}
+files in \pkg{DEoptim} and \pkg{RcppDE}, respectively. 
+The large file \verb|de4_0.c| has been split into three files: one each for
+the core functions \verb|DEoptim()| (which is called from \proglang{R}),
+\verb|devol()| (which is the core differential evolution optimisation
+routine) and \verb|permute()| (which is a helper function used to shuffle
+indices).  
+
+The evalution function has been replaced by a base class and two virtual
+classes. These can now use of an objective function written in \proglang{R}
+(as in \pkg{DEoptim}) as well as one written in \proglang{C++} which can lead
+to substantial speed improvements.  Section~\ref{sec:Cppchanges} discusses
+these changes in more detail.
+
 
 \subsection[R structure and changes]{\proglang{R} structure and changes}
 
@@ -234,22 +240,24 @@ and then prepares the return values.
 
 \paragraph{Part 1: Start of \texttt{DEoptim()}} The first part concerns
 itself with receiving parameters from \proglang{R};
-figure~\ref{fig:devol_start} displays this. The pure mechanics of passing and
+figure~\ref{fig:deoptim_start} displays this. The pure mechanics of passing and
 receiving parameters from \proglang{R} are easier thanks to logic provided by
 the \pkg{Rcpp} package:
 \begin{enumerate}
 \item Figure~\ref{fig:deoptim_start} illustrates this point: Panel B (with code
   using \proglang{C++}) appears to be about half the size of panel A but this
-  due in part to bringing comments on the same line as code.
-\item However, instead of using a mix of macros like \verb|NUMERIC_VALUE|,
-  \verb|INTEGER_VALUE|, \texttt{NUMERIC\_POINTER} and so on, we have consistent
-  use of \pkg{Rcpp} template function \verb|as| with template types
-  corresponding to base typed \verb|int|, \verb|double| etc. Also of note is
-  how one matrix object (for an initial population of parameter values) is
-  initialized directly from a parameter.
-\item Paremeter lookup is by a string value but done using \pkg{Rcpp} lookup
+  due in part to bringing comments on the same line as code. On the other
+  hand, we save for example the declaration of ten \texttt{SEXP} variables as
+  \pkg{Rcpp} objects can be converted directly to \texttt{SEXP} type.
+\item Instead of using a mix of macros like \verb|NUMERIC_VALUE|,
+  \verb|INTEGER_VALUE|, \texttt{NUMERIC\_POINTER} and so on, we have a
+  consistent use of the \pkg{Rcpp} template function \verb|as| with template
+  types corresponding to base typed \verb|int|, \verb|double| etc. Also of
+  note is how one matrix object (\texttt{initialpom} for seeding a first
+  population of parameter values) is initialized directly from a parameter.
+\item Paremeter lookup is by a string value but done using the \pkg{Rcpp} lookup
   of elements in the \verb|list| type (which corresponds to the \proglang{R}
-  list passed in) rather than via a (similar but ad-hoc) function
+  list passed in) rather than via a (functionally similar but ad-hoc) function
   \verb|getListElement| that hence is not longer needed in \pkg{RcppDE}.
 \item Here as in later code examples, care was taken to ensure that variable
   names and types correpond closely between both variants.
@@ -257,10 +265,10 @@ the \pkg{Rcpp} package:
 
 \paragraph{Part 2: Middle of \texttt{DEoptim()}} The second part,
 displayed in figure~\ref{fig:deoptim_memory}, allocates dynamic memory for
-both paraneters returned to \proglang{R} as well as for temporary objects
+both parameters returned to \proglang{R} as well as for temporary objects
 required to store the results of intermediate computations.  Again, panel A
-shows the \proglang{C} code from \pkg{Rcpp} whereas panel B displays the
-\proglang{C++} code.  One difference becomes immediately apparent: the lack
+shows the \proglang{C} code from \pkg{DEoptim} whereas panel B displays the
+\proglang{C++} code from \pkg{RcppDE}.  One difference becomes immediately apparent: the lack
 of proper matrix or vector types in \proglang{C}. We use the classes from the
 \pkg{Armadillo} \proglang{C++} library written by
 \cite{Sanderson:2010:Armadillo} and provided via the \proglang{R} package
@@ -277,40 +285,47 @@ of proper matrix or vector types in \proglang{C}. We use the classes from the
   \pkg{Rcpp} lets us create a list object in which we store matrices, just as
   would in \proglang{R} whereas the \proglang{C} construct is much more
   complicated as we will see below.
+\item A subtle point discussed more below is that \pkg{RcppDE} stores
+  population members column-wise rather than row-wise. Whereas matrices on the
+  left in panel A have dimension $n \times k$, we allocate them as $k \times
+  n$ matrices in panel B.
 \end{enumerate}
 
 \paragraph{Part 3: End of \texttt{DEoptim()}} The third and last part of
 \verb|DEoptim()| covers the actual call of the worker function \verb|devol()|
-and the preparation of return values for \proglang{R}.
+and the preparation of return values for \proglang{R}. As
+figure~\ref{fig:deoptim_end} shows, this section realized a significant
+reduction in source code size.
 
 \begin{enumerate}
-\item The \verb|devol()| function is called: as we aim to maintainer
-  interfaces, the is unchanged between both approaches shown in
+\item The \verb|devol()| function is called: as we aim to maintain
+  interfaces, the call is unchanged between both approaches shown in
   figure~\ref{fig:deoptim_end}.
 \item The code following the function call is very different.  The new
-  version saves in at least three ways:
+  version is shorter for a number of reasons:
   \begin{enumerate}
   \item No need to create new temporary variables just to convert to
-    \texttt{SEXP} types for return to \proglang{R} as the \pkg{Rcpp} takes
-    care of this.
+    \texttt{SEXP} types for return to \proglang{R} as the \pkg{Rcpp} package takes
+    care of this: seamless conversion back to \proglang{R} is a key feature.
   \item No need to allocate memory for new temporary variables (as we do not
     need these variables, and even if we did memory allocation would be implicit).
-  \item No need to \texttt{PROTECT} and later \texttt{UNPROTECT} such dynamoc
+  \item No need to \texttt{PROTECT} and later \texttt{UNPROTECT} such dynamic
     memory allocations (because this is handled automatically behind the scenes).
   \item No need for an explicit new list object to hold the eight return variables.
-  \item No need to (explicitly) assign names for these eight return
-    variables.
+  \item No need to explicitly assign names for these eight return
+    variables; this done implicitly while we create the returned list object.
   \end{enumerate}
 \item Rather, a mere two statements are executed: the call to \verb|devol()|
   followed by single call to create a return object as a list with named
   elements which are simply inserted---just like we would in \proglang{R} itself.
 \item The remaining code takes care of exception handling by providing to
   \verb|catch()| branches. These either forward a recognised exception to
-  \proglang{R} or in case of recognised exception signal a generic error.
+  \proglang{R}, or (in the case of an unrecognised exception) signal a
+  generic error.
 \end{enumerate}
 
 In sum, we see how a number of (possibly small) enhancements taken together
-permit us to a function which is considerably shorter and easier to read, yet
+permit us to write a function which is considerably shorter and easier to read, yet
 fully equivalent in terms of its functionality.
 
 \subsection[de4_0.c and devol.cpp]{\code{de4\_0.c} and \code{devol.cpp}}
@@ -335,6 +350,8 @@ ascpects:
   whether an external pointer object is passed (in which case we expect a
   compiled functin) or not in which case an \proglang{R} routine is used,
   just like in \pkg{DEoptim}.
+\item The \texttt{sortIndex} vector is filled with index only in case
+  strategy six has been selected as it is not used otherwise.
 \end{enumerate}
 
 \paragraph{Part 2: Initializations in \texttt{devol()}} The second part of
