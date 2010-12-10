@@ -1,5 +1,5 @@
 .onLoad <- function (lib, pack) {
-    packageStartupMessage("Now loading:)
+    packageStartupMessage("Now loading:")
     packageStartupMessage("  RcppDE: C++ Implementation of Differential Evolution Optimisation")
     packageStartupMessage("  Author: Dirk Eddelbuettel")
     packageStartupMessage("Based on:")
