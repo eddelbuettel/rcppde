@@ -1,3 +1,7 @@
+2010-12-09  Dirk Eddelbuettel  <edd@debian.org>
+
+	* demo/environment.R: Added new demo to show environment use
+
 2010-11-16  Dirk Eddelbuettel  <edd@debian.org>
 
 	* man/*.Rd: Added Author note for RcppDE.
