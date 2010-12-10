@@ -354,15 +354,16 @@ ascpects:
   strategy six has been selected as it is not used otherwise.
 \end{enumerate}
 
-\paragraph{Part 2: Initializations in \texttt{devol()}} The second part of
-\verb|devol()| deals with the creation and initialization of a number of
-variables.  The \proglang{C} language code in panel A is vastly more verbose
-and longer than the \proglang{C++} code in panel B. As shown in
-figure~\ref{fig:devol_init}, key differences are:
+\paragraph{Part 2: Initializations in \texttt{devol()}} 
+
+The second part of \verb|devol()| deals with the creation and initialization
+of a number of variables.  The \proglang{C} language code in panel A is
+clearly more verbose and longer than the \proglang{C++} code in panel B. As
+shown in figure~\ref{fig:devol_init}, key differences are:
 \begin{enumerate}
 \item Initialization of matrices to zero values uses two explicit loops in
   the \proglang{C} version.\footnote{The \texttt{memset()} function could be
-    used in the \proglang{C} version ot avoid the loops for a direct
+    used in the \proglang{C} version to avoid the loops for a minor
     performance gain.}  In \proglang{C++}, we simply use the member function
   \verb|zeros()| provided by the \pkg{Armadillo} library.
 \item In panel B for the \proglang{C++} case, the initial population in
@@ -371,7 +372,8 @@ figure~\ref{fig:devol_init}, key differences are:
   \textsl{row} as memory can generally be accessed faster column-wise.
 \item The actual initialization of the first population is very comparable;
   in particular the \proglang{R} random number generator is called in the
-  exact same sequence so that results are in fact identical.
+  exact same sequence all throughout \pkg{RcppDE} so that results are in fact
+  identical to those obtained from \pkg{DEoptim}.
 \item The initial population evaluation occurs with a call to
   \verb|evaluate()| in the original version, and a call of the member
   function of the evaluation class which will call either the supplied
@@ -380,86 +382,101 @@ figure~\ref{fig:devol_init}, key differences are:
 
 \paragraph{Part 3: Iteration loop setup and start of population loop in \texttt{devol()}} 
 
-The next part of \verb|devol()|, shown in
-figure~\ref{fig:devol_iter}, is already inside the large outer loop over all iterations.
-
-Similar to the discussion above, the new code is shorter in large part of
-more compact matrix expressions. Other difference are:
+The next part of \verb|devol()|, shown in figure~\ref{fig:devol_iter}, starts
+both the main outer loop over all iterations as well as the main inner loop
+over all population elements.  Similar to the discussion in the
+preceding paragraph, the new code is shorter in large part of more compact
+matrix expressions. Other differences are:
 \begin{enumerate}
 \item Intermediate populations are stored directly in a list, after being
   transposed to account for our design choice of operating column-wise. In
   the \proglang{C} code, the matrices are somewhat awkwardly `serialised'
-  into a single vector using a counter that incremened position by position.
-\item Several other vector copies are excecuted in a single statement rather
+  into a single vector using the counter \texttt{popcnt} that incremened
+  position by position. 
+\item Several other vector copies are each excecuted in a single statement rather
   than in an explicit loop.
 \item At the beginning of the population loop, a vector is once more stored
   in a temporary variable and the permuation algoritm is called to pick
   suitable indices which will be used next.
 \end{enumerate}
 
-\paragraph{Part 4: First four population strategies in  \texttt{devol()}} 
+\paragraph{Part 4 and 5: Population strategies in  \texttt{devol()}} 
 
 Evaluating each population member based on the user-selected strategies is
-detailed in figure~\ref{fig:devol_first_four}. There are only fairly minor differences
-between both version as shown by panels A and B:
+detailed in both figures~\ref{fig:devol_first_four} and
+\ref{fig:devol_other_three} covering the six available strategies as well as
+the default case. There are only fairly minor differences between both
+version as shown by panels A and B of both figures:
 \begin{enumerate}
 \item Instead of \verb|if/else| branches, the new version uses a
-  \verb|switch| statement.
+  \verb|switch| statement. This change can be beneficial as it may lead to fewer
+  comparison, depending on the chosen strategy, and though the inner loop is
+  executed many times, the overall benefit is still likely to be small.
 \item The case-invariant initialization of \verb|k| has been moved before the
   block.
+\item The code for the different strategies differs very little between the
+  initial \proglang{C} implementation and the newer \proglang{C++} code.`4
 \end{enumerate}
-
-\paragraph{Part 5: Remaining three population strategies in  \texttt{devol()}} 
-
-For the three remaining strategies, the code in panels A and B of
-figure~\ref{fig:devol_other_three} is similar to the code in
-\ref{fig:devol_first_four}.
 
 \paragraph{Part 6: End of population loop in  \texttt{devol()}} 
 
 Figure~\ref{fig:devol_end_pop} contains two fairly short segments that are
-entered once within each iteration ater the loop over all population elements
-has finished.  The two code segments in panels A and B of
-figure~\ref{fig:devol_end_pop}  are fairly equivalent, with the one
-difference once again the element-by-element copy of vector elements (in
-\proglang{C}) versus the single statement using \proglang{C++} objects.
+entered once within each outer iteration after the loop over all population
+elements has finished.  The two code segments in panels A and B of
+figure~\ref{fig:devol_end_pop} are fairly close, with the one difference
+once again the element-by-element copy of vector elements (in \proglang{C})
+versus the single statement using \proglang{C++} objects.
 
 \paragraph{Part 7: Special case of \texttt{bs} flag in  \texttt{devol()}} 
 
-Simlarly, figure~\ref{fig:devol_bs_flag} once more shows difference chiefly
-due to the way interim solutions are copied. Panel A has a full nine loops
-for copying vector or matrix elements which are not needed in panel B.  We
-should note that this code is executed only when the user has changed the
+Similarly, figure~\ref{fig:devol_bs_flag} once more shows differences chiefly
+due to the way interim solutions are copied. 
+\begin{enumerate}
+\item Panel A has a full nine loops for copying vector or matrix elements
+  which are not needed in panel B.
+\item Panel A has a somewhat elaborate segment to use a loop to copy a first
+  population vector to a temporary vector, copy a second into the place of
+  the first before then copying the content of the temporary vector into the
+  second (and likewise for the evaluation score of these vectors).  In Panel
+  B, we simply use a single call of \texttt{swap()} member function for both
+  the population vectors and their fitness.
+\end{enumerate}
+We should note that this code is executed only when the user has changed the
 default value of false for the \texttt{bs} option in the control list for
-\texttt{DEoptim()}. 
+\texttt{DEoptim()}.
 
 \paragraph{Part 8: End  of  \texttt{devol()}} 
 
-Figure~\ref{fig:devol_return} contains the final portion of the
+Finallt, figure~\ref{fig:devol_return} contains the final portion of the
 \verb|devol()| function. The population and its fitness value are saved. If
-the \texttt{checkWinner} of the control structure has been changed from the
-default value of false, a possible re-evaluation of the best population
-occurs and values are updated.  
+the \texttt{checkWinner} option of the control structure has been changed by
+the user from the default value of false, a possible re-evaluation of the
+best population occurs and values are updated.
 
-Next, if tracing is enabling and the iteration counter has a matching value,
-updates are printed before a few state variables are updated and the function
-returns after restoring the state of the random number generator.
+Next, if tracing is enabling and the iteration counter has a value which
+signals that tracing display should occur, then updates are printed before a
+few state variables are updated. 
+%
+The \texttt{devol()} then finishes right after restoring the state of the
+random number generator.
 
 
 \subsection[Evaluation functions in R and C++]{Evaluation functions in \proglang{R} and \proglang{C++}}
 
-Figure~\ref{fig:evaluate_fun} is the rare exception: the new code from
-\pkg{RcppDE} is much longer than old code it replaces.  This is due to the
-main extension between \pkg{DEoptim} and \pkg{RcppDE} it provides: the
-ability to supply not only an \proglang{R} function to describe the objective
-function to be minimmized---but also a compiled function.
+Figure~\ref{fig:evaluate_fun} details the code used to evaluate the
+user-supplied objective function.  This figure is an exception: the code from
+\pkg{RcppDE} is much longer than the code in \pkg{DEoptim}.  This is due to a
+key main extension in \pkg{RcppDE}: the ability to use not only an
+\proglang{R} function to describe the objective function to be
+minimmized---but also a compiled function.
 
-This is implemented by means of so-called abstract base class
-\texttt{EvalBase}. This is an empty class no containing code, but providing
-an interface (containing of two public functions \texttt{eval()} and
-\texttt{getNbEvals()}) that is then filled in.  
-Here, we have two classed deriving from the abstract base class: one each for
-the \proglang{R} and the \proglang{C++} function.  
+This is implemented by means of common \proglang{C++} idiom: an abstract base
+class, here called \texttt{EvalBase}. This is an empty class which contains
+no code, but providing an interface containing of two public functions
+\texttt{eval()} and \texttt{getNbEvals()} which are \textsl{virtual}: the
+declare the interface, but provide no implementation. This is provided by two
+classes deriving from the abstract base class: one each for evaluating the
+\proglang{R} and the \proglang{C++} function.
 
 The class \texttt{EvalStandard} in panel B correspond most closely to the
 normal \texttt{evaluate()} in panel A. A function call with a set of
@@ -475,37 +492,100 @@ implementing this.  Similar to the standard case, the function is supplied at
 the beginning to instantiate the class.  Later, on each evaluation call a new
 parameter vector is supplied.
 
+
 \section[R changes]{\proglang{R} changes}
 \label{sec:Rchanges}
 
-Figures~\ref{fig:fig_R_DEoptim1} and \ref{fig:fig_R_DEoptim2}
-display the main \proglang{R} function \texttt{DEoptim()}.
-A few changes have been made:
+Figures~\ref{fig:fig_R_DEoptim1} and \ref{fig:fig_R_DEoptim2} display the
+main \proglang{R} function \texttt{DEoptim()} which provides the interface
+the user of these packages employs.  A few changes have been made:
 \begin{enumerate}
+\item \pkg{DEoptim} supports variable arguments in the \proglang{R} function,
+  which follows the standard set by other optimisation functions. For
+  symmetry with the compiled function, we support just a standard vector.
+  However, the environment in which the function and parameters are evaluated
+  can also be supplied by the user (whereas \pkg{DEoptim} always creates a
+  new environment). The use of the environment then permits us to pass
+  auxiliary arguments to the function in the same way the variable arguments
+  would.
+\item \pkg{RcppDE} therefore has an additional argument \texttt{env} for the
+  user-supplied environement, as well as an additional creation of a default
+  environment if none was supplied. 
 \item Population matrices are passed from \proglang{C++} to \proglang{R} as
   matrix objects; no copy or rearrangement has to be undertaken.  This saves
   a block of code at the top of panel B in figure~\ref{fig:fig_R_DEoptim2}.
   Similarly, we do not have cast the population matrix as we already obtain a
   matrix. 
-\item \pkg{DEoptim} support variable arguments in the \texttt{R} function.
-  For symmetry with the compiled function, we support just a standard
-  vector.  However, the environment in which the function and parameters are
-  evaluated can also be supplied by the user (whereas \pkg{DEoptim} always
-  creates a new environment.
 \end{enumerate}
+
+None of the other functions from the files listed in table~\ref{tab:Rfiles}
+were changed (apart from a trivial startup message in the \texttt{.onLoad()}
+function in file \verb|zzz.R|).  In other words, the control options for
+\texttt{DEoptim()} are unchanged between between both versions, as are the
+additional method for summarizing, printing and plotting.
 
 \section{Auxiliary files}
 
-TODO tests/compTests.R
+\subsection{Regression tests}
 
-TODO Demo files
-TODO scripts/* using demo
+As of release 0.1.0, full regression testing has not been implemented in
+\pkg{RcppDE} (and none exist in \pkg{DEoptim} either as of the released
+version 2.0.7).  
+
+However, a directory \verb|tests/| has been added. It contains the file
+\verb|compTest.R| which provides a first means of both \textsl{comparing}
+results between \pkg{RcppDE} and \pkg{DEoptim} and also timing them.
+
+Three standard test functions (Wild, Rastrigin, Genrose) are run for four
+sets of parameter vector sizes---for both \pkg{RcppDE} and
+\pkg{DEoptim}. This ensures that results are identical between both
+implenations.
+
+\subsection{Demo files}
+\label{subsec:demos}
+
+Several demos have been added for \pkg{RcppDE} to the existing demo file
+present in \pkg{DEoptim}.  These new files are
+
+\begin{itemize}
+\item \texttt{SmallBenchmark} which runs the three standard test functions
+  in both implementations for three small parameters sizes. As these small
+  optimisation problems are relatively inexpensive, they are repeated a
+  number of times and timings are obtained as trimmed means.
+\item \texttt{LargeBenchmark} which runs the three standard test functions in
+  both implementations for three larger parameters sizes, this time without
+  replication.
+\item \texttt{CompiledBenchmark} which runs the three standard test
+  functions---but this time as compiled \proglang{C++} functions
+  demonstrating a significant performance gain relative to the \proglang{R}
+  version.
+\item \texttt{environment} which runs a single small example showing how to
+  pass an auxiliary parameter to the user-supplied function using an
+  environment.
+\end{itemize}
+
+\subsection{Benchmarking Scripts}
+
+The demos file from the preceding section are also being used for performance
+comparisons (as detailed in the next section).  
+
+The files are organised as thin wrapper scripts around the demo files
+described in the preceding section.
 
 \section{Performance}
 
-TODO just in R
+We will divide the performance comparison in three sections, corresponding to
+the same \textsl{small}, \textsl{large} and \textsl{compiled} split detailed
+above in section~\ref{subsec:demos}.
 
-TODO compiled
+\subsection{Small problems}
+
+\subsection{Large problems}
+
+\subsection{Compiled objective function}
+
+\subsection{Discussion}
+
 
 \section{Summary}
 
