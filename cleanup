@@ -4,4 +4,4 @@ rm -f src/*.o src/*.so
 
 find . -name \*~ -exec rm {} \;
 
-
+cd inst/doc && rm -f *.aux *.log *.bbl *.blg *.out *.tex && rm -rf auto/
