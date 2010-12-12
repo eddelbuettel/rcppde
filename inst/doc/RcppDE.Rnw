@@ -66,6 +66,7 @@
 
 <<prelim,echo=FALSE,print=FALSE>>=
 options(width=50)
+library(lattice)
 library(RcppDE)
 RcppDE.version <- packageDescription("RcppDE")$Version
 RcppDE.date <- packageDescription("RcppDE")$Date
@@ -820,38 +821,48 @@ wide range of optimisation problems.
 
 \section{Summary}
 
+Differential evolution optimization has been available for \proglang{R}
+through the \pkg{DEoptim} package
+\citep{MullenArdiaEtAl:2009:DEoptim,ArdiaBoudtCarlEtAl:2010:DEoptim,CRAN:DEoptim}.
 The \pkg{RcppDE} package presented in this paper started from a simple
-question.  Could we realize what the the quip \textsl{Shorter, Faster,
-  Easier: Pick Any Three} alludes to: simulataneous improvements in code
-length, expressiveness (or equally: comprehensibility) and at the same time
-gain in performance?
+question.  Could we start from \pkg{DEoptim} and, by relying on the
+\pkg{Rcpp} and \pkg{RcppArmadillo} packages, achieve what the the quip
+\textsl{Shorter, Faster, Easier: Pick Any Three} alludes to: simulataneous
+improvements in code length, expressiveness (while maintaining
+comprehensibility) and at the same time gain in performance?
 
 Answering the first part is easiest.  As section~\ref{sec:Cppchanges}
-demonstrated, the \proglang{C++} source code is now measurably shorter. Some
-of the change is of course do to editing style and preference---but a
-significant portion is due to two key sources.  First, the direct vector and
-matrix expressionals possible in \proglang{C++} free us from boilerplate code
-using loops just to copy vectors or matrices. Second, direct \proglang{R}
-object manipulation in \proglang{C++} is possibly thanks to \pkg{Rcpp}
-package. Among other things, this makes it easier to accessing parameters and
-return results.
+demonstrated and as can be seen from figures~\ref{fig:deoptim_start} to
+\ref{fig:devol_return} in the appendix, the \proglang{C++} source code in
+\pkg{RcppDE} is now measurably shorter that the \proglang{C} code in
+\pkg{DEoptim} that we built upon. While some of this change is caused by to
+editing style and comment preferences, a very significant portion is due to
+two key sources.  First, the direct vector and matrix expressions
+in \proglang{C++} free us from boilerplate code using loops just to copy
+vectors or matrices. Second, direct \proglang{R} object manipulation in
+\proglang{C++} is possible thanks to the \pkg{Rcpp} package. Among other
+things, this makes it easier to access parameters passed from \proglang{R},
+and to return results back from \proglang{C++} to \proglang{R}.
 
 Answering the second question in the affirmative is also possible.
 Section~\ref{sec:performance} presented results of consistent gains of
-\pkg{Rcpp} over \pkg{DEoptim} across all test functions and parameters vector
-sizes. Particularly noteworthy result for obtained with the compiled
-objective functions.
+\pkg{Rcpp} over \pkg{DEoptim} across all test functions and all parameters
+vector sizes that were examined. Particularly noteworthy improvements in
+performancen were obtained with the compiled objective functions.
 
 As for the third part and whether this makes using or extending the code
 \textsl{easier}? The proof may very well be in the pudding. We hope to now
-investigate in how to use multithreaded programming approaches using the
-OpenMP framework.  Having changed to the code basis to more compact
-\proglang{C++} should facilitate.  In the meantime, the relative ease with
-which the extension for compiled objective function has been added may be an
-indication.
+investigate how the use of multithreaded programming approaches, in
+particularly the OpenMP framework, can further improve the performance of
+optimization via differential evolution.  Having changed the code basis to
+the more compact \proglang{C++} should facilitate this investigation.  In the
+meantime, the relative ease with which the extension for compiled objective
+function has been added may be an indication of how we can benefit from
+\proglang{C++}.
 
 Concluding, we score this approach presented here at a careful \textsl{2 1/2
-  out of 3}.  We hope that \pkg{RcppDE} proves useful to others.
+  out of 3}.  We hope that \pkg{RcppDE} proves useful to other \proglang{R}
+user.
 
 \bibliography{RcppDE}
 
