@@ -62,6 +62,8 @@
 
 \SweaveOpts{engine=R,eps=FALSE,echo=FALSE,prefix.string=figures/chart}
 
+\setkeys{Gin}{width=0.975\textwidth}
+
 <<prelim,echo=FALSE,print=FALSE>>=
 options(width=50)
 library(RcppDE)
@@ -587,14 +589,22 @@ The files are organised as thin wrapper scripts around the demo files
 described in the preceding section.
 
 \section{Performance}
+\label{sec:performance}
 
 We will divide the performance comparison in three sections, corresponding to
 the same \textsl{small}, \textsl{large} and \textsl{compiled} split detailed
 above in section~\ref{subsec:demos}.
 
+Performance was measured between version 2.0-7 of \pkg{DEoptim} and the
+development versions of \pkg{RcppDE} preceding the 0.1.0 release of the
+latter.
+
 \subsection{Small problems}
 
-<<smallRes,fig=TRUE,width=11>>=
+%\begin{figure}[t!]
+\begin{figure}[ht]
+  \centering
+<<smallRes,fig=TRUE,width=8>>=
 ## # small benchmark at SVN 2419M
 ## # At 2010-11-08 06:42:29.018531
 smallLines <- "
@@ -631,22 +641,217 @@ ss[["pch"]] <- rep(19, 7)
 ss[["alpha"]] <- rep(0.75, 7)
 trellis.par.set("superpose.symbol", ss)
 
-smallWide <- data.frame(val=c(smallData[,1,drop=TRUE], smallData[,2,drop=TRUE]),
+smallWide <- data.frame(timeInSeconds=c(smallData[,1,drop=TRUE], smallData[,2,drop=TRUE]),
                         pkg=rep(c("DEoptim", "RcppDE"), each=9),
                         fun=rep(rep(c("Rastrigin", "Wild", "Genrose"), each=3), 2),
-                        n=rep(c(5,10,20), 6))
-print(dotplot(as.factor(n) ~val | fun, group=pkg, data=smallWide, layout=c(1,3),
-              key=simpleKey(text=c("RcppDE","DEoptim"), space="top", col=2)))
+                        n=c(5,10,20), 6)
+smallWide$fun <- factor(smallWide$fun, levels=c("Rastrigin", "Genrose", "Wild"))
+print(dotplot(as.factor(n) ~ timeInSeconds | fun, group=pkg, data=smallWide, layout=c(1,3),
+              xlab="Time in seconds for 5, 10 and 20 parameter problems", ylab="",
+              scales=list(x=list(log=TRUE,at=c(0.1, 0.2, 0.4, 0.6, 0.8, 1.0), labels=c(0.1, 0.2, 0.4, 0.6, 0.8, 1.0))),
+              key=simpleKey(text=c("DEoptim","RcppDE"), space="top")))
 @
+\caption{Performance comparison for small-scale optimisation problems.}
+\begin{flushleft}
+  \footnotesize Results from our calculations using scripts included in the
+  \pkg{RcppDE} package; results are included in the source package. Tests were
+  performed using Ubuntu Linux version 10.10 in 64-bit mode on an Intel i7 '920' CPU
+  running at 2.6 GHz in hyperthreaded mode.
+\end{flushleft}
+\label{fig:smallResults}
+\end{figure}
+
+Figure~\ref{fig:smallResults} displays a performance comparison on the
+standard objective functions Wild, Genrose and Rastrigin.  Each function is
+evaluated at five, ten and twenty parameters, respectively.  As running time
+for the small problems is inconsequential, we report trimmed means (excluding
+10\% at each side) over a set of ten replications (as shown in the script and
+demo files in the package and discussed above).
+
+From figure~\ref{fig:smallResults}, we can draw a number of conclusions:
+\begin{itemize}
+\item Performance between \pkg{DEoptim} and \pkg{RcppDE} is roughly
+  comparable, though \pkg{RcppDE} has a small edge for which is consistent
+  across functions and parameter sizes.
+\item Performance varies between objective functions: the Wild function with
+  its two calls of trigonometric functions as well as five expressions of the
+  vector $x$ is roughly twice as expensive as the Rastrigin function which
+  has just one trigonometric function and two $x$ terms.
+\item The cost of increasing parameter size is larger than just linear: for
+  all functions, $n=20$ takes more than twice as long than $n=10$, and
+  likewise for $n=5$.
+\end{itemize}
+
 
 \subsection{Large problems}
 
+%\begin{figure}[t!]
+\begin{figure}[ht]
+  \centering
+<<largeRes,fig=TRUE,width=8>>=
+## # big benchmark at SVN 2419M
+## # At 2010-11-08 06:43:51.422299
+largeLines <- "
+             DEoptim RcppDE ratioRcppToBasic pctGainOfRcpp netSpeedUp
+Rastrigin50    1.770  1.575          0.88983       11.0169     1.1238
+Rastrigin100   4.794  4.258          0.88819       11.1806     1.1259
+Rastrigin200  14.840 12.472          0.84043       15.9569     1.1899
+Wild50         3.692  3.558          0.96371        3.6295     1.0377
+Wild100       11.127 10.646          0.95677        4.3228     1.0452
+Wild200       38.026 35.755          0.94028        5.9722     1.0635
+Genrose50      2.587  2.414          0.93313        6.6873     1.0717
+Genrose100     6.252  5.739          0.91795        8.2054     1.0894
+Genrose200    17.058 15.147          0.88797       11.2030     1.1262
+"
+## MEANS         11.127 10.174          0.91431        8.5695     1.0937
+## # Done 2010-11-08 06:47:03.810348
+
+con <- textConnection(largeLines)
+largeData <- read.table(con, header=TRUE, sep="")
+close(con)
+
+largeWide <- data.frame(timeInSeconds=c(largeData[,1,drop=TRUE], largeData[,2,drop=TRUE]),
+                        pkg=rep(c("DEoptim", "RcppDE"), each=9),
+                        fun=rep(rep(c("Rastrigin", "Wild", "Genrose"), each=3), 2),
+                        n=c(50,100,200), 6)
+largeWide$fun <- factor(largeWide$fun, levels=c("Rastrigin", "Genrose", "Wild"))
+print(dotplot(as.factor(n) ~ timeInSeconds | fun, group=pkg, data=largeWide, layout=c(1,3),
+              xlab="Time in seconds for 50, 100 and 200 parameter problems", ylab="",
+              scales=list(x=list(log=TRUE,at=c(1, 2, 5, 10, 20, 30), labels=c(1, 2, 5, 10, 20, 30))),
+              key=simpleKey(text=c("DEoptim","RcppDE"), space="top")))
+@
+\caption{Performance comparison for large-scale optimisation problems.}
+\begin{flushleft}
+  \footnotesize Results from our calculations using scripts included in the
+  \pkg{RcppDE} package; results are included in the source package. Tests were
+  performed using Ubuntu Linux version 10.10 in 64-bit mode on an Intel i7 '920' CPU
+  running at 2.6 GHz in hyperthreaded mode.
+\end{flushleft}
+\label{fig:largeResults}
+\end{figure}
+
+Figure~\ref{fig:largeResults} display results from the running the same three
+test functions for larger paramters vectors of size fifty, one hundred and
+two hundred, respetively.
+
+As in the preceding figure~\ref{fig:smallResults}, using \pkg{RcppDE} rather
+than \pkg{DEoptim} on these optimization problems provides a consistent
+performance edge. This edge is now actually larger in both absolute and
+relative terms and ranges from just 3.5\% (for the Wild function at $n=50$)
+to almost 16\% (for Rastrigin at $n=200$).  The performance gain also
+increases across all functions as $n$ increases.
+
+
 \subsection{Compiled objective function}
+\label{subsec:compiled}
+
+%\begin{figure}[t!]
+\begin{figure}[ht]
+  \centering
+<<compiledRes,fig=TRUE,width=8>>=
+## # compiled benchmark at SVN 2419:2421M
+## # At 2010-11-08 06:48:42.56918
+compiledLines <- "
+             DEoptim  RcppDE ratioRcppToBasic pctGainOfRcpp netSpeedUp
+Rastrigin50    1.781  0.6090          0.34194        65.806     2.9245
+Rastrigin100   4.807  2.0940          0.43561        56.439     2.2956
+Rastrigin200  14.572  7.5000          0.51469        48.531     1.9429
+Wild50         3.748  0.9500          0.25347        74.653     3.9453
+Wild100       11.268  3.3160          0.29428        70.572     3.3981
+Wild200       37.225 12.4120          0.33343        66.657     2.9991
+Genrose50      2.667  0.2710          0.10161        89.839     9.8413
+Genrose100     6.498  0.7190          0.11065        88.935     9.0376
+Genrose200    17.471  1.9830          0.11350        88.650     8.8104
+"
+## MEANS         11.115  3.3171          0.29843        70.157     3.3509
+## # Done 2010-11-08 06:50:53.195003
+
+con <- textConnection(compiledLines)
+compiledData <- read.table(con, header=TRUE, sep="")
+close(con)
+
+compiledWide <- data.frame(timeInSeconds=c(compiledData[,1,drop=TRUE], compiledData[,2,drop=TRUE]),
+                        pkg=rep(c("DEoptim", "RcppDE"), each=9),
+                        fun=rep(rep(c("Rastrigin", "Wild", "Genrose"), each=3), 2),
+                        n=c(50,100,200), 6)
+compiledWide$fun <- factor(compiledWide$fun, levels=c("Rastrigin", "Genrose", "Wild"))
+print(dotplot(as.factor(n) ~ timeInSeconds | fun, group=pkg, data=compiledWide, layout=c(1,3),
+              xlab="Time in seconds for 50, 100 and 200 parameter problems using compiled objective function", ylab="",
+              scales=list(x=list(log=TRUE,at=c(0.5, 1, 2, 5, 10, 20, 30), labels=c(0.5, 1, 2, 5, 10, 20, 30))),
+              key=simpleKey(text=c("DEoptim","RcppDE"), space="top")))
+@
+\caption{Performance comparison for compiled objective function in optimisation problems.}
+\begin{flushleft}
+  \footnotesize Results from our calculations using scripts included in the
+  \pkg{RcppDE} package; results are included in the source package. Tests were
+  performed using Ubuntu Linux version 10.10 in 64-bit mode on an Intel i7 '920' CPU
+  running at 2.6 GHz in hyperthreaded mode.
+\end{flushleft}
+\label{fig:compiledResults}
+\end{figure}
+
+Using a compiled objective function can yield dramatic performance
+gains. Figure~\ref{fig:compiledResults} compares results for \pkg{RcppDE}
+using a compiled objective function with \pkg{DEoptim} using the standard
+\proglang{R} implementations used before.
+
+Gains can reach from (approximately) halving the observed time (for the
+Rastrigin function at $n=200$) to reducing it to almost one-tenth (for the
+Genrose function at all sizes).
 
 \subsection{Discussion}
 
+This section has demonstrated performance gains for the \pkg{RcppDE}
+implementation of optimisation via differential evolution relative to the
+\pkg{DEoptim} implementation we parted from. The gains we observed were
+consistent and range from small gains on small problems to moderate gains in
+the ten-percent range for larger problems.  In both these cases, the objective
+functions used were written in \proglang{R}.
+
+This paper also introduces a performance gain with allows the analysts to
+deplay differential evolution optimisation within  \proglang{R}, but via a
+compiled objective function.  This approach can yield more dramatic gains as
+was seen in section~\ref{subsec:compiled}.  Of course, the `No Free Lunch'
+theorem still holds: writing such an objective function may well be more
+work, or may not always be feasible.  However, if it is possible---and the
+\pkg{Rcpp} \citep{CRAN:Rcpp} for \proglang{R} and \proglang{C++} integration
+makes it easier---then this approach could provide significant gains on a
+wide range of optimisation problems.
 
 \section{Summary}
+
+The \pkg{RcppDE} package presented in this paper started from a simple
+question.  Could we realize what the the quip \textsl{Shorter, Faster,
+  Easier: Pick Any Three} alludes to: simulataneous improvements in code
+length, expressiveness (or equally: comprehensibility) and at the same time
+gain in performance?
+
+Answering the first part is easiest.  As section~\ref{sec:Cppchanges}
+demonstrated, the \proglang{C++} source code is now measurably shorter. Some
+of the change is of course do to editing style and preference---but a
+significant portion is due to two key sources.  First, the direct vector and
+matrix expressionals possible in \proglang{C++} free us from boilerplate code
+using loops just to copy vectors or matrices. Second, direct \proglang{R}
+object manipulation in \proglang{C++} is possibly thanks to \pkg{Rcpp}
+package. Among other things, this makes it easier to accessing parameters and
+return results.
+
+Answering the second question in the affirmative is also possible.
+Section~\ref{sec:performance} presented results of consistent gains of
+\pkg{Rcpp} over \pkg{DEoptim} across all test functions and parameters vector
+sizes. Particularly noteworthy result for obtained with the compiled
+objective functions.
+
+As for the third part and whether this makes using or extending the code
+\textsl{easier}? The proof may very well be in the pudding. We hope to now
+investigate in how to use multithreaded programming approaches using the
+OpenMP framework.  Having changed to the code basis to more compact
+\proglang{C++} should facilitate.  In the meantime, the relative ease with
+which the extension for compiled objective function has been added may be an
+indication.
+
+Concluding, we score this approach presented here at a careful \textsl{2 1/2
+  out of 3}.  We hope that \pkg{RcppDE} proves useful to others.
 
 \bibliography{RcppDE}
 
