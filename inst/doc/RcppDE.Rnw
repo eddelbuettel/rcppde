@@ -2,7 +2,7 @@
 \documentclass[nojss,shortnames,article]{jss}
 \usepackage{rotating}
 %\usepackage{float}
-\usepackage{flafter}
+%\usepackage{flafter}
 \usepackage{booktabs}
 
 \author{Dirk Eddelbuettel\\Debian Project} % \And Second Author\\Plus Affiliation}
@@ -61,6 +61,9 @@
 \begin{document}
 
 \SweaveOpts{engine=R,eps=FALSE,echo=FALSE,prefix.string=figures/chart}
+%\VignetteIndexEntry{From DEoptim} to RcppDE: A case study in porting from C %to C++ using Rcpp and RcppArmadillo}
+%\VignetteKeywords{Rcpp,RcppArmadillo,DEoption,differential evolution,optimisation}
+%\VignettePackage{RcppDE}
 
 \setkeys{Gin}{width=0.975\textwidth}
 
@@ -545,11 +548,7 @@ additional method for summarizing, printing and plotting.
 
 \subsection{Regression tests}
 
-As of release 0.1.0, full regression testing has not been implemented in
-\pkg{RcppDE} (and none exist in \pkg{DEoptim} either as of the released
-version 2.0.7).
-
-However, a directory \verb|tests/| has been added. It contains the file
+A a directory \verb|tests/| has been added. It contains the file
 \verb|compTest.R| which provides a first means of both \textsl{comparing}
 results between \pkg{RcppDE} and \pkg{DEoptim} and also timing them.
 
@@ -558,11 +557,13 @@ sets of parameter vector sizes---for both \pkg{RcppDE} and
 \pkg{DEoptim}. This ensures that results are identical between both
 implenations.
 
+Adding full regression testing is left for a future version of \pkg{RcppDE}.
+
 \subsection{Demo files}
 \label{subsec:demos}
 
 Several demos have been added for \pkg{RcppDE} to the existing demo file
-present in \pkg{DEoptim}.  These new files are
+already present in \pkg{DEoptim}.  These new files are
 
 \begin{itemize}
 \item \texttt{SmallBenchmark} which runs the three standard test functions
@@ -602,8 +603,8 @@ latter.
 
 \subsection{Small problems}
 
-%\begin{figure}[t!]
-\begin{figure}[ht]
+\begin{figure}[t!]
+%\begin{figure}[ht]
   \centering
 <<smallRes,fig=TRUE,width=8>>=
 ## # small benchmark at SVN 2419M
@@ -648,7 +649,7 @@ smallWide <- data.frame(timeInSeconds=c(smallData[,1,drop=TRUE], smallData[,2,dr
                         n=c(5,10,20), 6)
 smallWide$fun <- factor(smallWide$fun, levels=c("Rastrigin", "Genrose", "Wild"))
 print(dotplot(as.factor(n) ~ timeInSeconds | fun, group=pkg, data=smallWide, layout=c(1,3),
-              xlab="Time in seconds for 5, 10 and 20 parameter problems", ylab="",
+              xlab="Time in seconds for 5, 10 and 20 parameter problems, using logarithmic axis", ylab="",
               scales=list(x=list(log=TRUE,at=c(0.1, 0.2, 0.4, 0.6, 0.8, 1.0), labels=c(0.1, 0.2, 0.4, 0.6, 0.8, 1.0))),
               key=simpleKey(text=c("DEoptim","RcppDE"), space="top")))
 @
@@ -680,14 +681,16 @@ From figure~\ref{fig:smallResults}, we can draw a number of conclusions:
   has just one trigonometric function and two $x$ terms.
 \item The cost of increasing parameter size is larger than just linear: for
   all functions, $n=20$ takes more than twice as long than $n=10$, and
-  likewise for $n=5$.
+  likewise for $n=5$. Note that we plotted figures~\ref{fig:smallResults} to
+  \ref{fig:compiledResults} using a logarithmic $x$-axis which linearises the
+  results.
 \end{itemize}
 
 
 \subsection{Large problems}
 
-%\begin{figure}[t!]
-\begin{figure}[ht]
+\begin{figure}[t!]
+%\begin{figure}[ht]
   \centering
 <<largeRes,fig=TRUE,width=8>>=
 ## # big benchmark at SVN 2419M
@@ -717,7 +720,7 @@ largeWide <- data.frame(timeInSeconds=c(largeData[,1,drop=TRUE], largeData[,2,dr
                         n=c(50,100,200), 6)
 largeWide$fun <- factor(largeWide$fun, levels=c("Rastrigin", "Genrose", "Wild"))
 print(dotplot(as.factor(n) ~ timeInSeconds | fun, group=pkg, data=largeWide, layout=c(1,3),
-              xlab="Time in seconds for 50, 100 and 200 parameter problems", ylab="",
+              xlab="Time in seconds for 50, 100 and 200 parameter problems, using logarithmic axis", ylab="",
               scales=list(x=list(log=TRUE,at=c(1, 2, 5, 10, 20, 30), labels=c(1, 2, 5, 10, 20, 30))),
               key=simpleKey(text=c("DEoptim","RcppDE"), space="top")))
 @
@@ -746,8 +749,8 @@ increases across all functions as $n$ increases.
 \subsection{Compiled objective function}
 \label{subsec:compiled}
 
-%\begin{figure}[t!]
-\begin{figure}[ht]
+\begin{figure}[t!]
+%\begin{figure}[ht]
   \centering
 <<compiledRes,fig=TRUE,width=8>>=
 ## # compiled benchmark at SVN 2419:2421M
@@ -777,7 +780,7 @@ compiledWide <- data.frame(timeInSeconds=c(compiledData[,1,drop=TRUE], compiledD
                         n=c(50,100,200), 6)
 compiledWide$fun <- factor(compiledWide$fun, levels=c("Rastrigin", "Genrose", "Wild"))
 print(dotplot(as.factor(n) ~ timeInSeconds | fun, group=pkg, data=compiledWide, layout=c(1,3),
-              xlab="Time in seconds for 50, 100 and 200 parameter problems using compiled objective function", ylab="",
+              xlab="Time in sec. for 50, 100 and 200 parameter problems, compiled objective function, logarithmic axis", ylab="",
               scales=list(x=list(log=TRUE,at=c(0.5, 1, 2, 5, 10, 20, 30), labels=c(0.5, 1, 2, 5, 10, 20, 30))),
               key=simpleKey(text=c("DEoptim","RcppDE"), space="top")))
 @
@@ -832,7 +835,7 @@ improvements in code length, expressiveness (while maintaining
 comprehensibility) and at the same time gain in performance?
 
 Answering the first part is easiest.  As section~\ref{sec:Cppchanges}
-demonstrated and as can be seen from figures~\ref{fig:deoptim_start} to
+demonstrated, and as can be seen from figures~\ref{fig:deoptim_start} to
 \ref{fig:devol_return} in the appendix, the \proglang{C++} source code in
 \pkg{RcppDE} is now measurably shorter that the \proglang{C} code in
 \pkg{DEoptim} that we built upon. While some of this change is caused by to
@@ -845,24 +848,28 @@ things, this makes it easier to access parameters passed from \proglang{R},
 and to return results back from \proglang{C++} to \proglang{R}.
 
 Answering the second question in the affirmative is also possible.
-Section~\ref{sec:performance} presented results of consistent gains of
-\pkg{Rcpp} over \pkg{DEoptim} across all test functions and all parameters
-vector sizes that were examined. Particularly noteworthy improvements in
-performancen were obtained with the compiled objective functions.
+Section~\ref{sec:performance} presented results of consistent performance
+gains of \pkg{Rcpp} over \pkg{DEoptim} across all test functions and all
+parameters vector sizes that were examined in this paper. Particularly
+noteworthy improvements in performancen were obtained with the compiled
+objective functions that are possible with \pkg{RcppDE}.
 
 As for the third part and whether this makes using or extending the code
-\textsl{easier}? The proof may very well be in the pudding. We hope to now
+\textsl{easier}: The proof may very well be in the pudding. We hope to now
 investigate how the use of multithreaded programming approaches, in
-particularly the OpenMP framework, can further improve the performance of
-optimization via differential evolution.  Having changed the code basis to
-the more compact \proglang{C++} should facilitate this investigation.  In the
-meantime, the relative ease with which the extension for compiled objective
-function has been added may be an indication of how we can benefit from
-\proglang{C++}.
+particularly via the OpenMP framework, can further improve the performance of
+optimization via differential evolution.  We think that having changed the
+code basis to the more compact \proglang{C++} should facilitate this
+investigation.  In the meantime, the relative ease with which the extension
+for compiled objective function has been added may be an indication of the
+possible benefits from using \proglang{C++}. So this is not yet fully proven,
+but some benefits have already been demostrated.
 
-Concluding, we score this approach presented here at a careful \textsl{2 1/2
-  out of 3}.  We hope that \pkg{RcppDE} proves useful to other \proglang{R}
-user.
+Concluding, we can score the approach presented here at a careful \textsl{2
+  1/2 out of 3 possible points}. Going from \pkg{DEoptim} to \pkg{RcppDE} has
+been a useful case study in applying \pkg{Rcpp} and \pkg{RcppArmadillo} to a
+well-established problem. We hope that \pkg{RcppDE} also proves useful to
+other \proglang{R} users.
 
 \bibliography{RcppDE}
 
