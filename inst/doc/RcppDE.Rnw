@@ -29,10 +29,14 @@
   level---and vice versa. It also uses the \pkg{RcppArmadillo} package \citep{CRAN:RcppArmadillo}
   which provides an interface from \proglang{R} to the \pkg{Armadillo} linear algebra
   package written in \proglang{C++} by Sanderson \citep{Sanderson:2010:Armadillo}.
+
+  We find that by rewriting the differential evolution optimisation algorithm
+  in \proglang{C++}, we achieve three usually exclusive goals: a) shorter
+  code, b) easier maintainability as well as improved ability to enhance and
+  extend, and c) consistent performance gains.
 }
 
-\Keywords{\pkg{Rcpp}, \pkg{RcppArmadillo}, \pkg{DEoptim}, differential
-  evolution, genetic algorithm} %% at least one keyword must be supplied
+\Keywords{\pkg{Rcpp}, \pkg{RcppArmadillo}, \pkg{DEoptim}, differential evolution, genetic algorithm} %% at least one keyword must be supplied
 \Plainkeywords{Rcpp, RcppArmadillo, DEoptim, differential evolution, genetic algorith} %% without formatting
 
 %% publication information
@@ -65,7 +69,7 @@
 %\VignetteKeywords{Rcpp,RcppArmadillo,DEoption,differential evolution,optimisation}
 %\VignettePackage{RcppDE}
 
-\setkeys{Gin}{width=0.975\textwidth}
+\setkeys{Gin}{width=0.8\textwidth}
 
 <<prelim,echo=FALSE,print=FALSE>>=
 options(width=50)
@@ -95,8 +99,8 @@ particular suitable for real-valued optimisation problems.
 \pkg{DEoptim} is based on an implementation by Storn
 \citep{PriceStornLampinen:2006:DE}. It was originally implemented as an
 (interpreted) \proglang{R} script before being rewritten in (compiled)
-\proglang{C} which resulted in a much improved performance. \pkg{DEoptim} is
-being used to optimise problems from a wide range of problem domains ranging
+\proglang{C} which resulted in a much improved performance. \pkg{DEoptim} has
+been used to optimise problems from a wide range of problem domains ranging
 from crystallography \citep{MullenKrayzmanLevin:2010:Atomic} to agricultural
 economics \citep{BoernerHigginsKantelhardt:2007:Rainfall} and computational
 finance \citep{BoudtPetersonCarl:2008:HFPortfolio}. It is also being used by
@@ -147,13 +151,13 @@ language. These goals were loosely defined as follows:
 This paper is organised as follows. The next sections describes the structure
 of \pkg{DEoptim} which \pkg{RcppDE} shadows closesly. The following two
 section compare differences at the \proglang{R} and \proglang{C++} level,
-respectively. Next, changes in auxiliarry files are discussed before a
-short section reviews perfomance changes. A summary concludes. The
-appendix contains a list of figures contrasting the two implementations.
+respectively. Next, changes in auxiliarry files are discussed before we
+review changes in perfomance. A summary concludes. The appendix contains a
+list of figures contrasting the two implementations.
 
 \section[DEoptim structure]{\pkg{DEoptim} structure}
 
-\pkg{DEoptim} is a straightforward and well-implemented package. Its
+\pkg{DEoptim} is a straightforward and well-implemented package. Its core
 functionality is provided by three \proglang{R} files, as well as three
 \proglang{C} files.
 
@@ -173,20 +177,19 @@ before turning to the \proglang{R} side.
 
 \subsection[C / C++ structure and changes]{\proglang{} / \proglang{C++} structure and changes}
 
-\begin{table}[htb]
+\begin{table}[t!]
   \begin{center}
     \begin{tabular}{lrclr}
       \toprule
       \multicolumn{2}{c}{\pkg{DEoptim}} & & \multicolumn{2}{c}{\pkg{RcppDE}} \\
       File  & Functions    & & File  & Functions\\
-      %                      \cmidrule{1-2,3-4} \\
-      \midrule
+      \cmidrule{1-2} \cmidrule{4-5} \\
       \verb|de4_0.c| & \verb|DEoptimC()| & & \verb|deoptim.cpp| & \verb|DEoptim()| \\
                       & \verb|devol()|    & & \verb|devol.cpp|    & \verb|devol()| \\
                       & \verb|permute()|  & & \verb|permute.cpp| & \verb|permute()| \\[6pt]
       \verb|evaluate.c|&  \verb|evaluate()| & & & \\[6pt]
         &             & & \verb|evaluate.h|& \phantom{X} \verb|EvalBase class|  \\[6pt]
-      \verb|get_element.c|\phantom{X} &  \verb|getListElement()| & \phantom{X} & & \\
+      \verb|get_element.c|\phantom{X} &  \verb|getListElement()| & \phantom{XXX} & & \\
       \bottomrule
     \end{tabular}
     \caption{Source file organisation for \proglang{C} files in \pkg{DEoptim}}
@@ -203,32 +206,33 @@ routine) and \verb|permute()| (which is a helper function used to shuffle
 indices).
 
 The evalution function has been replaced by a base class and two virtual
-classes. These can now use of an objective function written in \proglang{R}
-(as in \pkg{DEoptim}) as well as one written in \proglang{C++} which can lead
-to substantial speed improvements.  Section~\ref{sec:Cppchanges} discusses
-these changes in more detail.
+classes. These can now make use of objective functions written in
+\proglang{R} (as in \pkg{DEoptim}) as well as ones written in
+\proglang{C++}. Using compiled objective functions can lead to substantial
+speed improvements, particularly when the evaluation of the objective is
+`expensive' relative to overall computation in the optimization algorithm.
+Section~\ref{sec:Cppchanges} discusses these changes in more detail.
 
 
 \subsection[R structure and changes]{\proglang{R} structure and changes}
 
 Table~\ref{tab:Rfiles} lists the files and corresponding key functions.  Very
-few changes has to made for \pkg{RcppDE} as keeping the interface compatible
-was an important goal. As can be seen from table~\ref{tab:Rfiles}, no files
-or functions were added.  A more detailed comparison follow below in
-section~\ref{sec:Rchanges}.
+few changes had to be made for \pkg{RcppDE}. Keeping the interface compatible
+between both implementations was an important goal. As can be seen from
+table~\ref{tab:Rfiles}, no files or functions were added.  A more detailed
+comparison follow below in section~\ref{sec:Rchanges}.
 
-\begin{table}[tb]
+\begin{table}[b!]
   \begin{center}
     \begin{tabular}{lr}
       \toprule
       File                                     & Functions \\
       \midrule
-%                                                \cmidrule{2}
       \verb|DEoptim.R| \phantom{XXXXX}        & \verb|DEoptim()| \\
-                                                & \verb|DEoptim.control()| \\[6pt]
-      \verb|methods.R|                         & \verb|summary.DEoptim()| \\
-                                                & \verb|plot.DEoptim()| \\[6pt]
-      \verb|zzz.R|                             & \verb|.onLoad()| \\
+                                               & \verb|DEoptim.control()| \\[6pt]
+      \verb|methods.R|                       & \verb|summary.DEoptim()| \\
+                                               & \verb|plot.DEoptim()| \\[6pt]
+      \verb|zzz.R|                            & \verb|.onLoad()| \\
       \bottomrule
     \end{tabular}
     \caption{Source file organisation for \proglang{R} files in \pkg{DEoptim}
@@ -601,7 +605,7 @@ Performance was measured between version 2.0-7 of \pkg{DEoptim} and the
 development versions of \pkg{RcppDE} preceding the 0.1.0 release of the
 latter.
 
-\subsection{Small problems}
+\subsection{Performance on small parameter vectors}
 
 \begin{figure}[t!]
 %\begin{figure}[ht]
@@ -687,7 +691,7 @@ From figure~\ref{fig:smallResults}, we can draw a number of conclusions:
 \end{itemize}
 
 
-\subsection{Large problems}
+\subsection{Performance on large parameter vectors}
 
 \begin{figure}[t!]
 %\begin{figure}[ht]
@@ -746,7 +750,7 @@ to almost 16\% (for Rastrigin at $n=200$).  The performance gain also
 increases across all functions as $n$ increases.
 
 
-\subsection{Compiled objective function}
+\subsection{Performance with compiled objective function}
 \label{subsec:compiled}
 
 \begin{figure}[t!]
@@ -875,6 +879,7 @@ other \proglang{R} users.
 
 
 \section*{Appendix}
+
 
 %% C++ functions
 
