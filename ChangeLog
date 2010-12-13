@@ -1,3 +1,9 @@
+2010-12-12  Dirk Eddelbuettel  <edd@debian.org>
+
+	* DESCRIPTION: Release 0.1.0
+
+	* inst/doc/RcppDE.Rnw: Finished first version of vignette
+
 2010-12-09  Dirk Eddelbuettel  <edd@debian.org>
 
 	* demo/environment.R: Added new demo to show environment use
