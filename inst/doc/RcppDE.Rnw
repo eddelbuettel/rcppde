@@ -83,6 +83,19 @@ if ( ! (file.exists("figures") && file.info("figures")$isdir) ) dir.create("figu
 @
 %
 
+\makeatletter
+\if@nojss
+  The \pkg{DEoptim} package was instrumental in
+  creating this paper, and I am grateful to \citet{CRAN:DEoptim}.
+  Christian Gunning kindly provided comments and additional references which
+  improved the paper. All remaining errors are mine.
+
+  \vfill
+  This version corresponds to \pkg{RcppDE} version \Sexpr{RcppDE.version} and was
+  typeset on \Sexpr{now.date}.
+\fi
+\makeatother
+
 
 \section{Introduction}
 
