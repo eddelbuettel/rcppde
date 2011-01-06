@@ -89,12 +89,17 @@ if ( ! (file.exists("figures") && file.info("figures")$isdir) ) dir.create("figu
 \pkg{DEoptim}
 \citep{MullenArdiaEtAl:2009:DEoptim,ArdiaBoudtCarlEtAl:2010:DEoptim,CRAN:DEoptim}
 provides differential evolution optimisation for the \proglang{R} language
-and statistical environement.  Differential optimisation is one of several
-evolutionary computing approaches; genetic algorithns and simulated annealing
-are two other ones.  Differential optimisation is reasonably close to genetic
+and statistical environment.  Differential evolution
+\citep{StornPrice:1997:Differential} is one of several
+evolutionary computing approaches to the global optimisation of arbitrary
+objective functions; genetic algorithms and simulated annealing
+are two others.  Differential evolution is reasonably close to genetic
 algorithms but differs in one key aspect: parameter values are encoded as
-floating point values (rather than sequences of binary digits) which makes it
-particular suitable for real-valued optimisation problems.
+floating point values (rather than sequences of binary digits), which makes it
+particular suitable for real-valued optimisation problems. The relative
+performance of differential evolution compared to other global optimisation
+algorithms, as well as optimal parametrization, is reviewed in
+\citet{StornPrice:1997:Differential} and \citet{VesterstromThomsen:2004:Comparative}.
 
 \pkg{DEoptim} is based on an implementation by Storn
 \citep{PriceStornLampinen:2006:DE}. It was originally implemented as an
@@ -133,7 +138,7 @@ language. These goals were loosely defined as follows:
   covers other aspects such as the automatic type conversion offered by
   \pkg{Rcpp} as well as the automatic memory management: by replacing
   allocation and freeing of heap-based dynamic memory, a consistent source of
-  programmer error would be elimnated---plus we are not trying `short and
+  programmer error would be eliminated---plus we are not trying `short and
   incomprehensible' in the APL-sense but aim for possible improvements on
   \textsl{both} the length and the ease of comprehension without trading one
   off against the other;
@@ -149,10 +154,10 @@ language. These goals were loosely defined as follows:
 \end{itemize}
 
 This paper is organised as follows. The next sections describes the structure
-of \pkg{DEoptim} which \pkg{RcppDE} shadows closesly. The following two
+of \pkg{DEoptim} which \pkg{RcppDE} shadows closely. The following two
 section compare differences at the \proglang{R} and \proglang{C++} level,
-respectively. Next, changes in auxiliarry files are discussed before we
-review changes in perfomance. A summary concludes. The appendix contains a
+respectively. Next, changes in auxiliary files are discussed before we
+review changes in performance. A summary concludes. The appendix contains a
 list of figures contrasting the two implementations.
 
 \section[DEoptim structure]{\pkg{DEoptim} structure}
@@ -205,7 +210,7 @@ the core functions \verb|DEoptim()| (which is called from \proglang{R}),
 routine) and \verb|permute()| (which is a helper function used to shuffle
 indices).
 
-The evalution function has been replaced by a base class and two virtual
+The evaluation function has been replaced by a base class and two virtual
 classes. These can now make use of objective functions written in
 \proglang{R} (as in \pkg{DEoptim}) as well as ones written in
 \proglang{C++}. Using compiled objective functions can lead to substantial
@@ -279,12 +284,12 @@ the \pkg{Rcpp} package:
   types corresponding to base typed \verb|int|, \verb|double| etc. Also of
   note is how one matrix object (\texttt{initialpom} for seeding a first
   population of parameter values) is initialized directly from a parameter.
-\item Paremeter lookup is by a string value but done using the \pkg{Rcpp} lookup
+\item Parameter lookup is by a string value but done using the \pkg{Rcpp} lookup
   of elements in the \verb|list| type (which corresponds to the \proglang{R}
   list passed in) rather than via a (functionally similar but ad-hoc) function
   \verb|getListElement| that hence is not longer needed in \pkg{RcppDE}.
 \item Here as in later code examples, care was taken to ensure that variable
-  names and types correpond closely between both variants.
+  names and types correspond closely between both variants.
 \end{enumerate}
 
 \paragraph{Part 2: Middle of \texttt{DEoptim()}} The second part,
@@ -300,7 +305,7 @@ of proper matrix or vector types in \proglang{C}. We use the classes from the
 \begin{enumerate}
 \item Matrix objects are created in \proglang{C} by first allocating a vector
   of pointers to pointers, which is followed by a loop in which each each
-  column is allocated as vector of approrpriate length.
+  column is allocated as vector of appropriate length.
 \item In \proglang{C++}, allocating a matrix is a single statement. Memory is
   managed by reference counting and is freed when objects go out of
   scope. This removes a \textsl{significant} portion of programmer errors.
@@ -362,7 +367,7 @@ figure~\ref{fig:devol_start} to figure~\ref{fig:devol_return}.
 \paragraph{Part 1: Start of \texttt{devol()}} The first part concerns the
 beginning of the \verb|devol()|. The display (in
 figure~\ref{fig:devol_start}) of panels A and B differs mostly in minor
-ascpects:
+aspects:
 \begin{enumerate}
 \item The \proglang{C} version contains a declaration of a number of loop
   variable that are either not needed at all in the \proglang{C++} version,
@@ -372,7 +377,7 @@ ascpects:
 \item The \proglang{C++} version has an additional short block to set up the
   proper evaluation class for the user supplied function, depending on
   whether an external pointer object is passed (in which case we expect a
-  compiled functin) or not in which case an \proglang{R} routine is used,
+  compiled function) or not in which case an \proglang{R} routine is used,
   just like in \pkg{DEoptim}.
 \item The \texttt{sortIndex} vector is filled with index only in case
   strategy six has been selected as it is not used otherwise.
@@ -415,12 +420,12 @@ matrix expressions. Other differences are:
 \item Intermediate populations are stored directly in a list, after being
   transposed to account for our design choice of operating column-wise. In
   the \proglang{C} code, the matrices are somewhat awkwardly `serialised'
-  into a single vector using the counter \texttt{popcnt} that incremened
+  into a single vector using the counter \texttt{popcnt} that incremented
   position by position.
-\item Several other vector copies are each excecuted in a single statement rather
+\item Several other vector copies are each executed in a single statement rather
   than in an explicit loop.
 \item At the beginning of the population loop, a vector is once more stored
-  in a temporary variable and the permuation algoritm is called to pick
+  in a temporary variable and the permutation algorithm is called to pick
   suitable indices which will be used next.
 \end{enumerate}
 
@@ -471,7 +476,7 @@ default value of false for the \texttt{bs} option in the control list for
 
 \paragraph{Part 8: End  of  \texttt{devol()}}
 
-Finallt, figure~\ref{fig:devol_return} contains the final portion of the
+Finally, figure~\ref{fig:devol_return} contains the final portion of the
 \verb|devol()| function. The population and its fitness value are saved. If
 the \texttt{checkWinner} option of the control structure has been changed by
 the user from the default value of false, a possible re-evaluation of the
@@ -492,7 +497,7 @@ user-supplied objective function.  This figure is an exception: the code from
 \pkg{RcppDE} is much longer than the code in \pkg{DEoptim}.  This is due to a
 key main extension in \pkg{RcppDE}: the ability to use not only an
 \proglang{R} function to describe the objective function to be
-minimmized---but also a compiled function.
+minimized---but also a compiled function.
 
 This is implemented by means of common \proglang{C++} idiom: an abstract base
 class, here called \texttt{EvalBase}. This is an empty class which contains
@@ -533,7 +538,7 @@ the user of these packages employs.  A few changes have been made:
   auxiliary arguments to the function in the same way the variable arguments
   would.
 \item \pkg{RcppDE} therefore has an additional argument \texttt{env} for the
-  user-supplied environement, as well as an additional creation of a default
+  user-supplied environment, as well as an additional creation of a default
   environment if none was supplied.
 \item Population matrices are passed from \proglang{C++} to \proglang{R} as
   matrix objects; no copy or rearrangement has to be undertaken.  This saves
@@ -559,7 +564,7 @@ results between \pkg{RcppDE} and \pkg{DEoptim} and also timing them.
 Three standard test functions (Wild, Rastrigin, Genrose) are run for four
 sets of parameter vector sizes---for both \pkg{RcppDE} and
 \pkg{DEoptim}. This ensures that results are identical between both
-implenations.
+implementation.
 
 Adding full regression testing is left for a future version of \pkg{RcppDE}.
 
@@ -739,8 +744,8 @@ print(dotplot(as.factor(n) ~ timeInSeconds | fun, group=pkg, data=largeWide, lay
 \end{figure}
 
 Figure~\ref{fig:largeResults} display results from the running the same three
-test functions for larger paramters vectors of size fifty, one hundred and
-two hundred, respetively.
+test functions for larger parameters vectors of size fifty, one hundred and
+two hundred, respectively.
 
 As in the preceding figure~\ref{fig:smallResults}, using \pkg{RcppDE} rather
 than \pkg{DEoptim} on these optimization problems provides a consistent
@@ -817,7 +822,7 @@ the ten-percent range for larger problems.  In both these cases, the objective
 functions used were written in \proglang{R}.
 
 This paper also introduces a performance gain with allows the analysts to
-deplay differential evolution optimisation within  \proglang{R}, but via a
+deploy differential evolution optimisation within  \proglang{R}, but via a
 compiled objective function.  This approach can yield more dramatic gains as
 was seen in section~\ref{subsec:compiled}.  Of course, the `No Free Lunch'
 theorem still holds: writing such an objective function may well be more
@@ -834,7 +839,7 @@ through the \pkg{DEoptim} package
 The \pkg{RcppDE} package presented in this paper started from a simple
 question.  Could we start from \pkg{DEoptim} and, by relying on the
 \pkg{Rcpp} and \pkg{RcppArmadillo} packages, achieve what the the quip
-\textsl{Shorter, Faster, Easier: Pick Any Three} alludes to: simulataneous
+\textsl{Shorter, Faster, Easier: Pick Any Three} alludes to: simultaneous
 improvements in code length, expressiveness (while maintaining
 comprehensibility) and at the same time gain in performance?
 
@@ -855,7 +860,7 @@ Answering the second question in the affirmative is also possible.
 Section~\ref{sec:performance} presented results of consistent performance
 gains of \pkg{Rcpp} over \pkg{DEoptim} across all test functions and all
 parameters vector sizes that were examined in this paper. Particularly
-noteworthy improvements in performancen were obtained with the compiled
+noteworthy improvements in performance were obtained with the compiled
 objective functions that are possible with \pkg{RcppDE}.
 
 As for the third part and whether this makes using or extending the code
@@ -867,7 +872,7 @@ code basis to the more compact \proglang{C++} should facilitate this
 investigation.  In the meantime, the relative ease with which the extension
 for compiled objective function has been added may be an indication of the
 possible benefits from using \proglang{C++}. So this is not yet fully proven,
-but some benefits have already been demostrated.
+but some benefits have already been demonstrated.
 
 Concluding, we can score the approach presented here at a careful \textsl{2
   1/2 out of 3 possible points}. Going from \pkg{DEoptim} to \pkg{RcppDE} has
@@ -1332,7 +1337,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     \tiny
     \begin{CodeChunk}
       \begin{CodeInput}
-  /* initialize initial popuplation */
+  /* initialize initial population */
   for (int i = 0; i < i_NP; i++) {
     for (int j = 0; j < i_D; j++) {
       initialpop[i][j] = 0.0;
@@ -1434,7 +1439,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
     \begin{CodeChunk}
       \begin{CodeInput}
-    initialpop.zeros();                         // initialize initial popuplation
+    initialpop.zeros();                         // initialize initial population
     d_bestmemit.zeros();                        // initialize best members
     d_bestvalit.zeros();                        // initialize best values
     d_pop.zeros();                              // initialize best population
@@ -2225,7 +2230,7 @@ namespace Rcpp {
 	    }
 	private:
 	    SEXP fcall, env;
-	    double defaultfun(SEXP par) { 		// essentialy the same as the old evaluate
+	    double defaultfun(SEXP par) { 		// essentially the same as the old evaluate
 		SEXP fn = ::Rf_lang2(fcall, par); 	// this could be done with Rcpp
 		SEXP sexp_fvec = ::Rf_eval(fn, env);	// but is still a lot slower right now
 		double f_result = REAL(sexp_fvec)[0];
@@ -2532,9 +2537,6 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), env, ...) {
   \caption{Second half of \proglang{R} function \texttt{DEoptim()}}
   \label{fig:fig_R_DEoptim2}
 \end{sidewaysfigure}
-
-
-
 
 
 \end{document}
