@@ -1,3 +1,24 @@
+2012-04-08  Dirk Eddelbuettel  <edd@debian.org>
+
+	* DESCRIPTION: Release 0.1.1
+
+	* tests/compTest.R: With the just-release DEoptim 2.2.0, results are
+	no longer identical so we commented-out the stopifnot() comparison to
+	not break any automated tests (as requested by the CRAN maintainers)
+
+	* .Rbuildignore: Added a few more files which R CMD check does not
+	want to see in the tarball
+
+2011-03-07  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/evaluate.h: Also reflect '...' argument from R function we pass
+	in, with thanks to Josh Ulrich for the one-line patch
+
+	* R/DEoptim.R: No longer pass environment 'env' down
+	* man/DEoptim.Rd: No longer document now unused 'env'
+
+	* src/deoptim.cpp: Minor tweak to RcppArmadillo object creation
+
 2010-12-12  Dirk Eddelbuettel  <edd@debian.org>
 
 	* DESCRIPTION: Release 0.1.0

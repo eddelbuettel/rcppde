@@ -47,7 +47,7 @@ DEoptim.control <- function(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
        checkWinner = checkWinner, avWinner = avWinner, p = p)
 }
 
-DEoptim <- function(fn, lower, upper, control = DEoptim.control(), env, ...) {
+DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
   ##fn1  <- function(par) fn(par, ...)
   if (length(lower) != length(upper))
     stop("'lower' and 'upper' are not of same length")
@@ -71,8 +71,8 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), env, ...) {
     nam <- names(upper)
   else
     nam <- paste("par", 1:length(lower), sep = "")
-  if (missing(env))
-    env <- new.env()
+
+  env <- new.env()
 
   ctrl <- do.call(DEoptim.control, as.list(control))
   ctrl$npar <- length(lower)

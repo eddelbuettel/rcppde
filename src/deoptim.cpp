@@ -23,7 +23,14 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
 RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP rhoS) {
     
     try {
+	// creating an Rcpp object from SEXP first is cheap, as is converting Rcpp to RcppArmadillo using this ctor
 	Rcpp::NumericVector  f_lower(lowerS), f_upper(upperS); 		// User-defined bounds
+	arma::colvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert Rcpp vectors to arma vectors
+	arma::colvec maxbound(f_upper.begin(), f_upper.size(), false);
+	// on the other, this creates a copy :-/
+	//arma::colvec minbound = Rcpp::as<arma::colvec>(lowerS); 	// User-defined bounds converted to arma vectors
+	//arma::colvec maxbound = Rcpp::as<arma::colvec>(upperS); 
+
 	Rcpp::List           control(controlS); 			// named list of params
 
 	double VTR           = Rcpp::as<double>(control["VTR"]);	// value to reach
@@ -35,7 +42,6 @@ RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP 
 	int i_storepopfrom   = Rcpp::as<int>(control["storepopfrom"]) - 1;  // When to start storing populations 
 	int i_storepopfreq   = Rcpp::as<int>(control["storepopfreq"]);  // How often to store populations 
 	int i_specinitialpop = Rcpp::as<int>(control["specinitialpop"]);// User-defined inital population 
-	Rcpp::NumericMatrix initialpopm = Rcpp::as<Rcpp::NumericMatrix>(control["initialpop"]);
 	double f_weight      = Rcpp::as<double>(control["F"]);  	// stepsize 
 	double f_cross       = Rcpp::as<double>(control["CR"]);  	// crossover probability 
 	int i_bs_flag        = Rcpp::as<int>(control["bs"]);   		// Best of parent and child 
@@ -44,8 +50,8 @@ RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP 
 	int i_av_winner      = Rcpp::as<int>(control["avWinner"]);  	// Average 
 	double i_pPct        = Rcpp::as<double>(control["p"]); 		// p to define the top 100p% best solutions 
 
-	arma::colvec minbound(f_lower.begin(), f_lower.size(), false); 	// convert Rcpp vectors to arma vectors
-	arma::colvec maxbound(f_upper.begin(), f_upper.size(), false);
+	// as above, doing it in two steps is faster
+	Rcpp::NumericMatrix initialpopm = Rcpp::as<Rcpp::NumericMatrix>(control["initialpop"]);
 	arma::mat initpopm(initialpopm.begin(), initialpopm.rows(), initialpopm.cols(), false);
 
 	arma::mat ta_popP(i_D, i_NP*2);    				// Data structures for parameter vectors 

@@ -6,19 +6,18 @@
   Performs evolutionary global optimization via the Differential Evolution algorithm.
 }
 \usage{
-DEoptim(fn, lower, upper, control = DEoptim.control(), env, ...)
+DEoptim(fn, lower, upper, control = DEoptim.control(), ...)
 }
 \arguments{
   \item{fn}{the function to be optimized (minimized). The function should have as its first 
     argument the vector of real-valued parameters to optimize, and return a scalar real result. \code{NA} 
-    and \code{NaN} values are not allowed. \code{fn} can also been
-    external pointer object encapsulating a C/C++-level function pointer
-    to a compiled functions.}
+    and \code{NaN} values are not allowed. Note that \code{fn} can also
+    be an external pointer object encapsulating a C/C++-level function pointer
+    to a compiled functions which may offer considerable speed improvements.}
   \item{lower, upper}{two vectors specifying scalar real lower and upper bounds on each parameter to be optimized, so that the i-th element 
     of \code{lower} and \code{upper} applied to the i-th parameter. The implementation searches
     between \code{lower} and \code{upper} for the global optimum (minimum) of \code{fn}.}
   \item{control}{a list of control parameters; see \code{\link{DEoptim.control}}.}
-  \item{env}{environment in which to evaluate \code{fn}; a new environment is created if missing.}
   \item{...}{further arguments to be passed to \code{fn}.}
 }
 \details{
