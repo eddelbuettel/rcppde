@@ -3,3 +3,6 @@ inst/doc/figures/
 inst/scripts/check2.r
 inst/doc/jss.bst
 inst/doc/jss.cls
+^.*\.Rproj$
+^\.Rproj\.user$
+.travis.yml

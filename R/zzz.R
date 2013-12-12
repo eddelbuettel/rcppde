@@ -1,4 +1,4 @@
-.onLoad <- function (lib, pkg) {
+.onAttach <- function (lib, pkg) {
     packageStartupMessage(paste("Now loading:",
                                 "  RcppDE: C++ Implementation of Differential Evolution Optimisation",
                                 "  Author: Dirk Eddelbuettel",

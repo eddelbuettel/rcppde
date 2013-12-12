@@ -1,8 +1,19 @@
+2013-12-11  Dirk Eddelbuettel  <edd@debian.org>
+
+	* DESCRIPTION: Release 0.1.2
+
+	* vignettes/*: Moved files from inst/doc/
+
+	* .travis.yml: Added for Github / Travis support
+	* .gitignore: Added for git support
+
+	* R/zzz.R: Startup message given by .onAttach() rather than .onLoad()
+
 2012-04-08  Dirk Eddelbuettel  <edd@debian.org>
 
 	* DESCRIPTION: Release 0.1.1
 
-	* tests/compTest.R: With the just-release DEoptim 2.2.0, results are
+	* tests/compTest.R: With the just-released DEoptim 2.2.0, results are
 	no longer identical so we commented-out the stopifnot() comparison to
 	not break any automated tests (as requested by the CRAN maintainers)
 
