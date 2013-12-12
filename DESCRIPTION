@@ -1,6 +1,6 @@
 Package: RcppDE
 Version: 0.1.2
-Date: $Date$
+Date: 2013-12-12
 Title: Global optimization by differential evolution in C++
 Author: Dirk Eddelbuettel extending DEoptim (by David Ardia, Katharine Mullen,
   Brian Peterson, Joshua Ulrich) which itself is based on DE-Engine (by Rainer Storn)

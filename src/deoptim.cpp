@@ -67,7 +67,7 @@ RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP 
 	arma::colvec t_bestitP(i_D);
 	arma::colvec t_tmpP(i_D); 
 
-	int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
+	int i_nstorepop = static_cast<int>(ceil(static_cast<double>((i_itermax - i_storepopfrom) / i_storepopfreq)));
 	arma::mat d_pop(i_D, i_NP); 
 	Rcpp::List d_storepop(i_nstorepop);
 	arma::mat d_bestmemit(i_D, i_itermax);       

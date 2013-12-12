@@ -1,4 +1,4 @@
-2013-12-11  Dirk Eddelbuettel  <edd@debian.org>
+2013-12-12  Dirk Eddelbuettel  <edd@debian.org>
 
 	* DESCRIPTION: Release 0.1.2
 
@@ -8,6 +8,10 @@
 	* .gitignore: Added for git support
 
 	* R/zzz.R: Startup message given by .onAttach() rather than .onLoad()
+
+	* src/deoptim.cpp (DEoptim): Added a static_cast<> to make g++-4.8 happy
+
+	* .Rbuildignore: Exclude a few more development files from tarball
 
 2012-04-08  Dirk Eddelbuettel  <edd@debian.org>
 
