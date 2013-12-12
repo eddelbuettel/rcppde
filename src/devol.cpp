@@ -35,7 +35,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     arma::icolvec::fixed<urn_depth> ia_urn2; 	// fixed-size vector for urn draws
     arma::icolvec ia_urntmp(i_NP); 		// so that we don't need to re-allocated each time in permute
     arma::mat initialpop(i_D, i_NP); 
-    int i_nstorepop = ceil((i_itermax - i_storepopfrom) / i_storepopfreq);
+    int i_nstorepop = static_cast<int>(ceil(static_cast<double>((i_itermax - i_storepopfrom) / i_storepopfreq)));
     int p_NP = round(i_pPct * i_NP);  		// choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
     arma::icolvec sortIndex(i_NP); 		// sorted values of ta_oldC 

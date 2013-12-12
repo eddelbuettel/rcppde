@@ -10,6 +10,7 @@
 	* R/zzz.R: Startup message given by .onAttach() rather than .onLoad()
 
 	* src/deoptim.cpp (DEoptim): Added a static_cast<> to make g++-4.8 happy
+	* src/devol.cpp (devol): Idem
 
 	* .Rbuildignore: Exclude a few more development files from tarball
 
