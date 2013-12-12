@@ -6,3 +6,6 @@ inst/doc/jss.cls
 ^.*\.Rproj$
 ^\.Rproj\.user$
 .travis.yml
+benchmark.txt
+COPYRIGHTS
+scripts

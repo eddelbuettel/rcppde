@@ -18,7 +18,7 @@ before_install:
   - ./travis-tool.sh bootstrap
 
 #install:
-  - ./travis-tool.sh install_r Rcpp RcppArmadillo
+  - ./travis-tool.sh install_r Rcpp RcppArmadillo inline DEoptim lattice
 
 script: ./travis-tool.sh run_tests
 
