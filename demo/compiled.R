@@ -14,7 +14,7 @@ demo.LargeBenchmark  <- function() {
         1.0 + sum (100 * (x[-n]^2 - x[-1])^2 + (x[-1] - 1)^2)
     }
 
-    Rcpp::sourceCpp("compiledFunctions.cpp")
+    Rcpp::sourceCpp("cpp/compiledFunctions.cpp")
     
     maxIt <- 250                        # not excessive but so that we get some run-time on simple problems
 
