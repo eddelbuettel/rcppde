@@ -1,3 +1,14 @@
+2014-12-17  Dirk Eddelbuettel  <edd@debian.org>
+
+	* DESCRIPTION: Removed Depends: RcppArmadillo
+	* DESCRIPTION: Changed Depends: Rcpp to Imports: Rcpp
+	* NAMESPACE: Added imports(Rcpp)
+
+	* demo/small.R: Renamed from SmallBenchmark.R
+	* demo/large.R: Renamed from LargeBenchmark.R
+	* demo/compiled.R: Renamed from CompiledBenchmark.R
+	* cpp/compiledFunctions.R: Moved down one directory
+
 2014-05-26  Dirk Eddelbuettel  <edd@debian.org>
 
 	* demo/CompiledBenchmark.R: Rewritten to use Rcpp Attributes

@@ -1,5 +1,5 @@
 DEoptim           some examples of the DEoptim function.
-SmallBenchmark    repeated runs of RcppDE vs DEoptim on small vectors
-LargeBenchmark    single runs of RcppDE vs DEoptim on large vectors
-CompiledBenchmark single runs of RcppDE vs DEoptim on compiled objective function
+small             repeated runs of RcppDE vs DEoptim on small vectors
+large             single runs of RcppDE vs DEoptim on large vectors
+compiled          single runs of RcppDE vs DEoptim on compiled objective function
 environment       simple example of using RcppDE with a user-supplied environemtn
