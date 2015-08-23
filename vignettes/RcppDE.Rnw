@@ -79,7 +79,7 @@ RcppDE.version <- packageDescription("RcppDE")$Version
 RcppDE.date <- packageDescription("RcppDE")$Date
 now.date <- strftime(Sys.Date(), "%B %d, %Y")
 # create figures/ if not present
-if ( ! (file.exists("figures") && file.info("figures")$isdir) ) dir.create("figures")
+if ( ! (file.exists("figures") && file.info("figures")[["isdir"]]) ) dir.create("figures")
 @
 %
 
