@@ -65,7 +65,7 @@
 \begin{document}
 
 \SweaveOpts{engine=R,eps=FALSE,echo=FALSE,prefix.string=figures/chart}
-%\VignetteIndexEntry{From DEoptim} to RcppDE: A case study in porting from C %to C++ using Rcpp and RcppArmadillo}
+%\VignetteIndexEntry{From DEoptim to RcppDE: A case study in porting from C %to C++ using Rcpp and RcppArmadillo}
 %\VignetteKeywords{Rcpp,RcppArmadillo,DEoption,differential evolution,optimisation}
 %\VignettePackage{RcppDE}
 
