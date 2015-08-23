@@ -65,7 +65,7 @@
 \begin{document}
 
 \SweaveOpts{engine=R,eps=FALSE,echo=FALSE,prefix.string=figures/chart}
-%\VignetteIndexEntry{From DEoptim} to RcppDE: A case study in porting from C %to C++ using Rcpp and RcppArmadillo}
+%\VignetteIndexEntry{From DEoptim to RcppDE: A case study in porting from C %to C++ using Rcpp and RcppArmadillo}
 %\VignetteKeywords{Rcpp,RcppArmadillo,DEoption,differential evolution,optimisation}
 %\VignettePackage{RcppDE}
 
@@ -79,7 +79,7 @@ RcppDE.version <- packageDescription("RcppDE")$Version
 RcppDE.date <- packageDescription("RcppDE")$Date
 now.date <- strftime(Sys.Date(), "%B %d, %Y")
 # create figures/ if not present
-if ( ! (file.exists("figures") && file.info("figures")$isdir) ) dir.create("figures")
+if ( ! (file.exists("figures") && file.info("figures")[["isdir"]]) ) dir.create("figures")
 @
 %
 
