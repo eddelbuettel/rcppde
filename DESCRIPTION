@@ -14,6 +14,7 @@ Description: An efficient C++ based implementation of the 'DEoptim'
  an implicit code review which eliminated a few inefficiencies which have
  since been eliminated in 'DEoptim'.
 License: GPL (>= 2)
+Imports: Rcpp
 Suggests: inline, DEoptim, lattice
 Imports: Rcpp
 LinkingTo: Rcpp, RcppArmadillo
