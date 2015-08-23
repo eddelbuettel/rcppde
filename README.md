@@ -1,10 +1,12 @@
-# RcppDE: Rcpp port of Differential Evolution
+## RcppDE [![Build Status](https://travis-ci.org/eddelbuettel/rcppde.svg)](https://travis-ci.org/eddelbuettel/rcppde) [![License](http://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](http://www.gnu.org/licenses/gpl-2.0.html) [![CRAN](http://www.r-pkg.org/badges/version/RcppDE)](http://cran.rstudio.com/package=RcppDE) [![Downloads](http://cranlogs.r-pkg.org/badges/RcppDE?color=brightgreen)](http://www.r-pkg.org/pkg/RcppDE)
 
-[![Build Status](https://travis-ci.org/eddelbuettel/rcppde.png)](https://travis-ci.org/eddelbuettel/rcppde)
+Rcpp port of Differential Evolution
 
-## Global optimization by differential evolution in C++
+### About
 
-This package provides an efficient C++ based implementation of the DEoptim
+The package provides global optimization by differential evolution.
+
+It uses an efficient C++ based implementation of the DEoptim
 function which performs global optimization by differential evolution.  Its
 creation was motivated by trying to see if the old approximation "easier,
 shorter, faster: pick any two" could in fact be extended to achieving all
