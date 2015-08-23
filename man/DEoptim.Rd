@@ -36,7 +36,7 @@ DEoptim(fn, lower, upper, control = DEoptim.control(), ...)
   distributed with the book \emph{Differential Evolution -- A Practical
   Approach to Global Optimization} by Price, K.V., Storn, R.M., Lampinen
   J.A, Springer-Verlag, 2006, and found on-line at
-  \url{http://www.icsi.berkeley.edu/~storn/}. Since version 2.0-3 the C 
+  \url{http://www1.icsi.berkeley.edu/~storn/code.html}. Since version 2.0-3 the C 
   implementation dynamically allocates the memory required to store the population, removing limitations on the 
   number of members in the population and length of the parameter vectors that may be optimized. 
   Since becoming publicly available, the package \pkg{DEoptim} has been used by several authors to solve optimization 

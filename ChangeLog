@@ -1,3 +1,21 @@
+2015-08-23  Dirk Eddelbuettel  <edd@debian.org>
+
+	* vignettes/RcppDE.Rnw: Remove a spurious } in VignetteIndexEntry
+  	file (with thanks to Kurt Hornik for spotting this)
+
+	* DESCRIPTION: Removed Depends: on RcppArmadillo and changed Depends:
+        on Rcpp to Imports: [R CMD check]
+	* NAMESPACE: Added importFrom statement for Rcpp [R CMD check]
+
+	* demo/c++/compiledFunctions.cpp: Moved to subdirectory [R CMD check]
+	* demo/CompiledBenchmark.R: Adjust path to c++/compiledFunctions.cpp
+
+	* man/DEoptim.Rd: Updated URL to Storn's page [R CMD check]
+
+	* DESCRIPTION: Minor edits [R CMD check]
+
+	* demo/00Index: Minor edits
+
 2014-05-26  Dirk Eddelbuettel  <edd@debian.org>
 
 	* demo/CompiledBenchmark.R: Rewritten to use Rcpp Attributes
