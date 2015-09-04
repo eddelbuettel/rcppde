@@ -95,7 +95,7 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
   ctrl$trace <- as.numeric(ctrl$trace)
   ctrl$specinitialpop <- as.numeric(ctrl$specinitialpop)
 
-  outC <- .Call("DEoptim", lower, upper, fn, ctrl, env, PACKAGE = "RcppDE")
+  outC <- DEoptim_impl(lower, upper, fn, ctrl, env)
   ##
   if (length(outC$storepop) > 0) {
     nstorepop <- floor((outC$iter - ctrl$storepopfrom) / ctrl$storepopfreq)

@@ -1,7 +1,7 @@
-// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; tab-width: 8 -*-
+// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 //
 // Port of DEoptim (2.0.7) by Ardia et al to Rcpp/RcppArmadillo/Armadillo
-// Copyright (C) 2010  Dirk Eddelbuettel <edd@debian.org>
+// Copyright (C) 2010 - 2015  Dirk Eddelbuettel <edd@debian.org>
 //
 // DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
 // and based on DE-Engine v4.0, Rainer Storn, 2004  
@@ -28,20 +28,18 @@
 //                   indices from ia_urn2[i], i = 1, 2, 3, ..., i_urn2_depth.
 // Return Value   : -
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urn1[]) {
-    GetRNGstate();
     int k = i_NP;
     int i_urn1 = 0;
     int i_urn2 = 0;
     for (int i = 0; i < i_NP; i++)
-	ia_urn1[i] = i; 		   /* initialize urn1 */
+        ia_urn1[i] = i;                    /* initialize urn1 */
 
     i_urn1 = i_avoid;                      /* get rid of the index to be avoided and place it in position 0. */
     while (k > i_NP - i_urn2_depth) {      /* i_urn2_depth is the amount of indices wanted (must be <= NP) */
-	ia_urn2[i_urn2] = ia_urn1[i_urn1]; /* move it into urn2 */
-	ia_urn1[i_urn1] = ia_urn1[k-1];    /* move highest index to fill gap */
-	k = k - 1;                         /* reduce number of accessible indices */
-	i_urn2 = i_urn2 + 1;               /* next position in urn2 */
-	i_urn1 = static_cast<int>(::unif_rand() * k);   /* choose a random index */
+        ia_urn2[i_urn2] = ia_urn1[i_urn1]; /* move it into urn2 */
+        ia_urn1[i_urn1] = ia_urn1[k-1];    /* move highest index to fill gap */
+        k = k - 1;                         /* reduce number of accessible indices */
+        i_urn2 = i_urn2 + 1;               /* next position in urn2 */
+        i_urn1 = static_cast<int>(::unif_rand() * k);   /* choose a random index */
     }
-    PutRNGstate();
 }
