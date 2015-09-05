@@ -39,6 +39,10 @@
 \Keywords{\pkg{Rcpp}, \pkg{RcppArmadillo}, \pkg{DEoptim}, differential evolution, genetic algorithm} %% at least one keyword must be supplied
 \Plainkeywords{Rcpp, RcppArmadillo, DEoptim, differential evolution, genetic algorith} %% without formatting
 
+%\VignetteIndexEntry{From DEoptim to RcppDE: A case study in porting from C to C++ using Rcpp and RcppArmadillo}
+%\VignetteKeywords{Rcpp,RcppArmadillo,DEoption,differential evolution,optimisation}
+%\VignettePackage{RcppDE}
+
 %% publication information
 %% NOTE: Typically, this can be left commented and will be filled out by the technical editor
 %% \Volume{13}
@@ -65,9 +69,6 @@
 \begin{document}
 
 \SweaveOpts{engine=R,eps=FALSE,echo=FALSE,prefix.string=figures/chart}
-%\VignetteIndexEntry{From DEoptim to RcppDE: A case study in porting from C %to C++ using Rcpp and RcppArmadillo}
-%\VignetteKeywords{Rcpp,RcppArmadillo,DEoption,differential evolution,optimisation}
-%\VignettePackage{RcppDE}
 
 \setkeys{Gin}{width=0.8\textwidth}
 

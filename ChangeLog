@@ -1,3 +1,16 @@
+2015-09-05  Dirk Eddelbuettel  <edd@debian.org>
+
+	* vignettes/RcppDE.Rnw: Fix another typo
+
+2015-09-04  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/deoptim.cpp: Use Rcpp Attributes
+	* src/devol.cpp: Ditto, remove extra RNGScope
+	* src/permute.cpp: Ditto, remove extra RNGScope
+	* src/evaluate.h: Ditto, remove extra RNGScope
+	* src/Makevars: Updated
+	* R/DEoptim: Reflect Attributes interface
+
 2015-08-23  Dirk Eddelbuettel  <edd@debian.org>
 
 	* DESCRIPTION: Release 0.1.2
