@@ -74,7 +74,7 @@ Rcpp::List DEoptim_impl(const arma::colvec & minbound,                  // user-
 
     // call actual Differential Evolution optimization given the parameters
     devol(VTR, f_weight, f_cross, i_bs_flag, minbound, maxbound, fnS, rhoS, i_trace, i_strategy, i_D, i_NP, 
-          i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
+          i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop,
           ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP,
           d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval,
           d_reltol, i_steptol);
