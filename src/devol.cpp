@@ -16,7 +16,7 @@ void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urnt
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            const arma::colvec & fa_minbound, const arma::colvec & fa_maxbound, SEXP fcall, SEXP rho, int i_trace,
            int i_strategy, int i_D, int i_NP, int i_itermax, arma::mat & initialpopm, 
-           int i_storepopfrom, int i_storepopfreq, int i_specinitialpop, int i_check_winner, int i_av_winner,
+           int i_storepopfrom, int i_storepopfreq, int i_specinitialpop,
            arma::mat &ta_popP, arma::mat &ta_oldP, arma::mat &ta_newP, arma::colvec & t_bestP, 
            arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double & t_bestC,
            arma::colvec & t_bestitP, arma::colvec & t_tmpP, 
