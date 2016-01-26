@@ -21,7 +21,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double & t_bestC,
            arma::colvec & t_bestitP, arma::colvec & t_tmpP, 
            arma::mat &d_pop, Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
-           int & i_iterations, double i_pPct, long & l_nfeval) {
+           int & i_iterations, double i_pPct, long & l_nfeval,
+           double d_reltol, int i_steptol) { ////////NEW LINE
 
     //ProfilerStart("/tmp/RcppDE.prof");
     Rcpp::DE::EvalBase *ev = NULL;              // pointer to abstract base class
@@ -38,7 +39,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     int i_nstorepop = static_cast<int>(ceil(static_cast<double>((i_itermax - i_storepopfrom) / i_storepopfreq)));
     int p_NP = round(i_pPct * i_NP);            // choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
-    arma::Col<int32_t> sortIndex(i_NP);         // sorted values of ta_oldC 
+    arma::Col<int32_t> sortIndex(i_NP);              // sorted values of ta_oldC 
     if (i_strategy == 6) {
         for (int i = 0; i < i_NP; i++) 
             sortIndex[i] = i; 
@@ -62,7 +63,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
         } else {                                // or user-specified initial member 
             ta_popP.col(i) = initialpop.col(i);
         } 
-        memcpy(REAL(par), ta_popP.colptr(i), Rf_nrows(par) * sizeof(double));      
+        memmove(REAL(par), ta_popP.colptr(i), Rf_nrows(par) * sizeof(double));      
         ta_popC[i] = ev->eval(par);
         if (i == 0 || ta_popC[i] <= t_bestC) {
             t_bestC = ta_popC[i];
@@ -75,9 +76,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
   
     int i_iter = 0;                             // ------Iteration loop--------------------------------------------
     int popcnt = 0;
-    int i_xav = 1;
+    // int i_xav = 1;
+    int i_iter_tol = 0;
   
-    while ((i_iter < i_itermax) && (t_bestC > VTR)) {    // main loop ====================================
+    while ((i_iter < i_itermax) && (t_bestC > VTR) && (i_iter_tol <= i_steptol)) {    // main loop ====================================
         if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {         // store intermediate populations
             d_storepop[popcnt++] = Rcpp::wrap( trans(ta_oldP) );
         } // end store pop 
@@ -188,7 +190,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
             }
 
             // ------Trial mutation now in t_tmpP-----------------
-            memcpy(REAL(par), t_tmpP.memptr(), Rf_nrows(par) * sizeof(double));      
+            memmove(REAL(par), t_tmpP.memptr(), Rf_nrows(par) * sizeof(double));      
             double t_tmpC = ev->eval(par);                              // Evaluate mutant in t_tmpP
             if (t_tmpC <= ta_oldC[i] || i_bs_flag) {                    // i_bs_flag means will choose best NP later
                 ta_newP.col(i) = t_tmpP;                                // replace target with mutant 
@@ -235,34 +237,46 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
         ta_oldP = ta_newP;                      // have selected NP mutants move on to next generation 
         ta_oldC = ta_newC;
 
-        if (i_check_winner)  {                  // check if the best stayed the same, if necessary 
-            int same = 1;
-            for (int j = 0; j < i_D; j++) {
-                if (t_bestitP[j] != t_bestP[j]) {
-                    same = 0;
-                }
-            }
-            if (same && i_iter > 1)  {
-                i_xav++;
-                memcpy(REAL(par), t_bestP.memptr(), Rf_nrows(par) * sizeof(double));      
-                double tmp_best = ev->eval(par);// if re-evaluation of winner 
-                if (i_av_winner)                //  possibly letting the winner be the average of all past generations 
-                    t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + 
-                        (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
-                else
-                    t_bestC = tmp_best;
-            } else {
-                i_xav = 1;
-            }
-        }
-        t_bestitP = t_bestP;
+//         if (i_check_winner)  {                  // check if the best stayed the same, if necessary 
+//             int same = 1;
+//             for (int j = 0; j < i_D; j++) {
+//                 if (t_bestitP[j] != t_bestP[j]) {
+//                     same = 0;
+//                 }
+//             }
+//             if (same && i_iter > 1)  {
+//                 i_xav++;
+//                 memmove(REAL(par), t_bestP.memptr(), Rf_nrows(par) * sizeof(double));      
+//                 double tmp_best = ev->eval(par);// if re-evaluation of winner 
+//                 if (i_av_winner)                //  possibly letting the winner be the average of all past generations 
+//                     t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + 
+//                         (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
+//                 else
+//                     t_bestC = tmp_best;
+//             } else {
+//                 i_xav = 1;
+//             }
+//         }
+//         t_bestitP = t_bestP;
 
+
+        //print out temporary results
         if ( (i_trace > 0)  &&  ((i_iter % i_trace) == 0) ) {
             Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, t_bestC);
             for (int j = 0; j < i_D; j++)
                 Rprintf("%12.6f", t_bestP[j]);
             Rprintf("\n");
         }
+        
+        ////////NEW LINE
+        //check relative convergence
+        if(abs(d_bestvalit[i_iter - 1] - t_bestC) < (d_reltol*(abs(d_bestvalit[i_iter - 1]) + d_reltol)))
+        {
+          i_iter_tol++;
+        }else{
+          i_iter_tol = 0;
+        }
+        
     } // end loop through generations 
     
     d_pop = ta_oldP;

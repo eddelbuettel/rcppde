@@ -18,7 +18,8 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            arma::mat    & ta_popP, arma::mat    & ta_oldP, arma::mat    & ta_newP, arma::colvec & t_bestP, 
            arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double       & t_bestC,      
            arma::colvec & t_bestitP, arma::colvec & t_tmpP, arma::mat & d_pop, Rcpp::List & d_storepop, 
-           arma::mat & d_bestmemit, arma::colvec & d_bestvalit, int & i_iterations, double i_pPct, long & l_nfeval);
+           arma::mat & d_bestmemit, arma::colvec & d_bestvalit, int & i_iterations, double i_pPct, long & l_nfeval,
+           double d_reltol, int i_steptol); /////NEW LINE
 
 // [[Rcpp::export]]
 Rcpp::List DEoptim_impl(const arma::colvec & minbound,                  // user-defined lower bounds
@@ -40,9 +41,12 @@ Rcpp::List DEoptim_impl(const arma::colvec & minbound,                  // user-
     double f_cross       = Rcpp::as<double>(control["CR"]);             // crossover probability 
     int i_bs_flag        = Rcpp::as<int>(control["bs"]);                // Best of parent and child 
     int i_trace          = Rcpp::as<int>(control["trace"]);             // Print progress? 
-    int i_check_winner   = Rcpp::as<int>(control["checkWinner"]);       // Re-evaluate best parameter vector? 
-    int i_av_winner      = Rcpp::as<int>(control["avWinner"]);          // Average 
+//     int i_check_winner   = Rcpp::as<int>(control["checkWinner"]);       // Re-evaluate best parameter vector? 
+//     int i_av_winner      = Rcpp::as<int>(control["avWinner"]);          // Average 
     double i_pPct        = Rcpp::as<double>(control["p"]);              // p to define the top 100p% best solutions 
+    //////NEW LINE
+    double d_reltol      = Rcpp::as<double>(control["reltol"]);         // tolerance for relative convergence test, default to be sqrt(.Machine$double.eps)
+    int i_steptol        = Rcpp::as<double>(control["steptol"]);        // maximum of iteration after relative convergence test is passed, default to be itermax
 
     // as above, doing it in two steps is faster
     Rcpp::NumericMatrix initialpopm = Rcpp::as<Rcpp::NumericMatrix>(control["initialpop"]);
@@ -72,7 +76,8 @@ Rcpp::List DEoptim_impl(const arma::colvec & minbound,                  // user-
     devol(VTR, f_weight, f_cross, i_bs_flag, minbound, maxbound, fnS, rhoS, i_trace, i_strategy, i_D, i_NP, 
           i_itermax, initpopm, i_storepopfrom, i_storepopfreq, i_specinitialpop, i_check_winner, i_av_winner,
           ta_popP, ta_oldP, ta_newP, t_bestP, ta_popC, ta_oldC, ta_newC, t_bestC, t_bestitP, t_tmpP,
-          d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval);
+          d_pop, d_storepop, d_bestmemit, d_bestvalit, i_iter, i_pPct, l_nfeval,
+          d_reltol, i_steptol);
 
     return Rcpp::List::create(Rcpp::Named("bestmem")   = t_bestP,   // and return a named list with results to R
                               Rcpp::Named("bestval")   = t_bestC,
