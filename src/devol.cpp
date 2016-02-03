@@ -1,12 +1,14 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 //
 // Port of DEoptim (2.0.7) by Ardia et al to Rcpp/RcppArmadillo/Armadillo
-// Copyright (C) 2010 - 2015  Dirk Eddelbuettel <edd@debian.org>
+// Copyright (C) 2010 - 2016  Dirk Eddelbuettel <edd@debian.org>
 //
 // DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
 // and based on DE-Engine v4.0, Rainer Storn, 2004  
 // (http://www.icsi.berkeley.edu/~storn/DeWin.zip)
 
+// ensure Armadillo (even with C++11/14) uses int32_t intgegers we can interchange with R 
+#define ARMA_32BIT_WORD 1
 #include <RcppArmadillo.h>      // declarations for both Rcpp and RcppArmadillo offering Armadillo classes
 #include "evaluate.h"           // simple function evaluation framework
 // #include <google/profiler.h>
@@ -22,7 +24,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::colvec & t_bestitP, arma::colvec & t_tmpP, 
            arma::mat &d_pop, Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
            int & i_iterations, double i_pPct, long & l_nfeval,
-           double d_reltol, int i_steptol) { ////////NEW LINE
+           double d_reltol, int i_steptol) { 
 
     //ProfilerStart("/tmp/RcppDE.prof");
     Rcpp::DE::EvalBase *ev = NULL;              // pointer to abstract base class
@@ -33,13 +35,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     }
     const int urn_depth = 5;                    // 4 + one index to avoid 
     Rcpp::NumericVector par(i_D);               // initialize parameter vector to pass to evaluate function 
-    arma::Col<int32_t>::fixed<urn_depth> ia_urn2;    // fixed-size vector for urn draws
-    arma::Col<int32_t> ia_urntmp(i_NP);              // so that we don't need to re-allocated each time in permute
+    arma::icolvec::fixed<urn_depth> ia_urn2;    // fixed-size vector for urn draws
+    arma::icolvec ia_urntmp(i_NP);              // so that we don't need to re-allocated each time in permute
     arma::mat initialpop(i_D, i_NP); 
     int i_nstorepop = static_cast<int>(ceil(static_cast<double>((i_itermax - i_storepopfrom) / i_storepopfreq)));
     int p_NP = round(i_pPct * i_NP);            // choose at least two best solutions 
     p_NP = p_NP < 2 ? 2 : p_NP;
-    arma::Col<int32_t> sortIndex(i_NP);              // sorted values of ta_oldC 
+    arma::icolvec sortIndex(i_NP);              // sorted values of ta_oldC 
     if (i_strategy == 6) {
         for (int i = 0; i < i_NP; i++) 
             sortIndex[i] = i; 
@@ -237,30 +239,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
         ta_oldP = ta_newP;                      // have selected NP mutants move on to next generation 
         ta_oldC = ta_newC;
 
-//         if (i_check_winner)  {                  // check if the best stayed the same, if necessary 
-//             int same = 1;
-//             for (int j = 0; j < i_D; j++) {
-//                 if (t_bestitP[j] != t_bestP[j]) {
-//                     same = 0;
-//                 }
-//             }
-//             if (same && i_iter > 1)  {
-//                 i_xav++;
-//                 memmove(REAL(par), t_bestP.memptr(), Rf_nrows(par) * sizeof(double));      
-//                 double tmp_best = ev->eval(par);// if re-evaluation of winner 
-//                 if (i_av_winner)                //  possibly letting the winner be the average of all past generations 
-//                     t_bestC = ((1/(double)i_xav) * t_bestC) + ((1/(double)i_xav) * tmp_best) + 
-//                         (d_bestvalit[i_iter-1] * ((double)(i_xav - 2))/(double)i_xav);
-//                 else
-//                     t_bestC = tmp_best;
-//             } else {
-//                 i_xav = 1;
-//             }
-//         }
-//         t_bestitP = t_bestP;
-
-
-        //print out temporary results
+        // print out temporary results
         if ( (i_trace > 0)  &&  ((i_iter % i_trace) == 0) ) {
             Rprintf("Iteration: %d bestvalit: %f bestmemit:", i_iter, t_bestC);
             for (int j = 0; j < i_D; j++)
@@ -268,13 +247,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
             Rprintf("\n");
         }
         
-        ////////NEW LINE
         //check relative convergence
-        if(abs(d_bestvalit[i_iter - 1] - t_bestC) < (d_reltol*(abs(d_bestvalit[i_iter - 1]) + d_reltol)))
-        {
-          i_iter_tol++;
-        }else{
-          i_iter_tol = 0;
+        if (abs(d_bestvalit[i_iter - 1] - t_bestC) < (d_reltol*(abs(d_bestvalit[i_iter - 1]) + d_reltol))) {
+            i_iter_tol++;
+        } else {
+            i_iter_tol = 0;
         }
         
     } // end loop through generations 

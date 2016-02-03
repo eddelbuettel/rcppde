@@ -1,3 +1,16 @@
+2016-02-02  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/devol.cpp: Revert Jan 21 change for -std=c++14; ensure
+	ARMA_32BIT_WORD is defined so that Armadillo will always integers we
+	can interchange with R (whereas C++11/14 would lead to 64 bit)
+
+2016-01-25  Yi Kang  <yi.kang.action@gmail.com>
+
+	* src/deoptim.cpp: Add d_reltol, d_steptol for convergence criterion,
+	remove i_check_winner, i_av_winner
+	* src/devol.cpp: Idem; also switch memcpy() to memmove()
+	* R/DEoptim.R: Corresponding changes on R side
+
 2016-01-22  Dirk Eddelbuettel  <edd@debian.org>
 
 	* DESCRIPTION (Version): Release 0.1.5

@@ -19,7 +19,7 @@ void devol(double VTR, double f_weight, double fcross, int i_bs_flag,
            arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double       & t_bestC,      
            arma::colvec & t_bestitP, arma::colvec & t_tmpP, arma::mat & d_pop, Rcpp::List & d_storepop, 
            arma::mat & d_bestmemit, arma::colvec & d_bestvalit, int & i_iterations, double i_pPct, long & l_nfeval,
-           double d_reltol, int i_steptol); /////NEW LINE
+           double d_reltol, int i_steptol);
 
 // [[Rcpp::export]]
 Rcpp::List DEoptim_impl(const arma::colvec & minbound,                  // user-defined lower bounds
@@ -41,10 +41,7 @@ Rcpp::List DEoptim_impl(const arma::colvec & minbound,                  // user-
     double f_cross       = Rcpp::as<double>(control["CR"]);             // crossover probability 
     int i_bs_flag        = Rcpp::as<int>(control["bs"]);                // Best of parent and child 
     int i_trace          = Rcpp::as<int>(control["trace"]);             // Print progress? 
-//     int i_check_winner   = Rcpp::as<int>(control["checkWinner"]);       // Re-evaluate best parameter vector? 
-//     int i_av_winner      = Rcpp::as<int>(control["avWinner"]);          // Average 
     double i_pPct        = Rcpp::as<double>(control["p"]);              // p to define the top 100p% best solutions 
-    //////NEW LINE
     double d_reltol      = Rcpp::as<double>(control["reltol"]);         // tolerance for relative convergence test, default to be sqrt(.Machine$double.eps)
     int i_steptol        = Rcpp::as<double>(control["steptol"]);        // maximum of iteration after relative convergence test is passed, default to be itermax
 
