@@ -248,7 +248,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
         }
         
         //check relative convergence
-        if (abs(d_bestvalit[i_iter - 1] - t_bestC) < (d_reltol*(abs(d_bestvalit[i_iter - 1]) + d_reltol))) {
+        if (std::abs(d_bestvalit[i_iter - 1] - t_bestC) < (d_reltol*(std::abs(d_bestvalit[i_iter - 1]) + d_reltol))) {
             i_iter_tol++;
         } else {
             i_iter_tol = 0;

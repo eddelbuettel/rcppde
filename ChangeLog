@@ -1,3 +1,9 @@
+2016-02-03  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/devol.cpp (devol): Use std::abs()
+
+	* man/DEoptim.control.Rd: Updated to mention d_reltol, d_steptol
+
 2016-02-02  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/devol.cpp: Revert Jan 21 change for -std=c++14; ensure
