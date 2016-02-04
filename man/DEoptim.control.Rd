@@ -10,7 +10,8 @@
 DEoptim.control(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
    itermax = 200, CR = 0.5, F = 0.8, trace = TRUE,
    initialpop = NULL, storepopfrom = itermax + 1,
-   storepopfreq = 1, checkWinner = FALSE, avWinner = TRUE, p = 0.2)
+   storepopfreq = 1, p = 0.2, reltol = sqrt(.Machine$double.eps),
+   steptol = itermax)
 }
 \arguments{
    \item{VTR}{the value to be reached. The optimization process
@@ -59,25 +60,15 @@ DEoptim.control(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
     \item{storepopfreq}{the frequency with which populations are stored.
       Default to \code{1}, i.e., every intermediate population
       is stored.}
-    \item{checkWinner}{logical value indicating whether to re-evaluate
-      the objective function using the winning parameter vector if this
-      vector remains the same between
-    generations. This may be useful for the optimization of a noisy
-    objective function. If \code{checkWinner = TRUE} and \code{avWinner = FALSE}
-   then the  value associated with re-evaluation of
-   the objective function is used in the next generation.
-   Default to \code{FALSE}. }
- \item{avWinner}{logical value. If \code{checkWinner = TRUE} and
-   \code{avWinner = TRUE} then the objective
-   function value associated with the winning member represents the
-   average of all evaluations of the objective function over the course
-   of the `winning streak' of the best population member. This option
-   may be useful for optimization of noisy objective functions, and is
-   interpreted only if \code{checkWinner = TRUE}.
-   The default value is \code{TRUE}.}
- \item{p}{when \code{strategy = 6}, the top (100 * p)\% best 
-   solutions are used in the mutation. \code{p} must be defined in (0,1].}
- }
+    \item{p}{when \code{strategy = 6}, the top (100 * p)\% best 
+      solutions are used in the mutation. \code{p} must be defined in
+      (0,1].}
+    \item{reltol}{relative convergence tolerance.  The algorithm stops if
+      it is unable to reduce the value by a factor of \code{reltol * (abs(val) +
+        reltol)} after \code{steptol} steps. Defaults to
+      \code{sqrt(.Machine$double.eps)}, typically about \code{1e-8}.}
+    \item{steptol}{see \code{reltol}. Defaults to \code{itermax}.}
+  }
 \value{
   The default value of \code{control} is the return value of 
   \code{DEoptim.control()}, which is  a list (and a member of the \code{S3} class  
