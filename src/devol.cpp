@@ -82,8 +82,8 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     
     //Trigger JADE algorithm when d_c <> 0 (randomize cross-over and weight coefficient)
     //Using user supplied cross-over and weight coefficient as the mean of randomized coefficients
-    double mean_cross  = f_cross;
-    double mean_weight = f_weight;
+    double rand_cross  = f_cross;
+    double rand_weight = f_weight;
   
     while ((i_iter < i_itermax) && (t_bestC > VTR) && (i_iter_tol <= i_steptol)) {    // main loop ====================================
         if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {         // store intermediate populations
@@ -110,13 +110,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
             
             //Trigger JADE algorithm when d_c <> 0 (randomize cross-over and weight coefficient)
             if(d_c>0){
-              f_cross = Rcpp::as<double>(rnorm(1, mean_cross, 0.1));
-              f_cross = f_cross > 1.0 ? 1 : f_cross;
-              f_cross = f_cross < 0.0 ? 0 : f_cross;
+              rand_cross = Rcpp::as<double>(rnorm(1, f_cross, 0.1));
+              rand_cross = rand_cross > 1.0 ? 1 : rand_cross;
+              rand_cross = rand_cross < 0.0 ? 0 : rand_cross;
               do{
-                f_weight = Rcpp::as<double>(rcauchy(1, mean_weight, 0.1));
-                f_weight = f_weight > 1.0 ? 1.0 : f_weight;
-              } while (f_weight <= 0.0);
+                rand_weight = Rcpp::as<double>(rcauchy(1, f_weight, 0.1));
+                rand_weight = rand_weight > 1.0 ? 1.0 : rand_weight;
+              } while (rand_weight <= 0.0);
             }
             
             int k = 0;                          // loop counter used in all strategies below 
@@ -127,37 +127,37 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
             case 1: {                           // ---classical strategy DE/rand/1/bin---------------------------------
                 int j = static_cast<int>(::unif_rand() * i_D);  // random parameter 
                 do {                            // add fluctuation to random target 
-                    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_weight * 
+                    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + rand_weight * 
                         (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
                     j = (j + 1) % i_D;
-                } while ((::unif_rand() < f_cross) && (++k < i_D));
+                } while ((::unif_rand() < rand_cross) && (++k < i_D));
                 break;
             }
             case 2: {                           // ---DE/local-to-best/1/bin-------------------------------------------
                 int j = static_cast<int>(::unif_rand() * i_D);  // random parameter 
                 do {                            // add fluctuation to random target 
-                    t_tmpP[j] = t_tmpP[j] + f_weight * (t_bestitP[j] - t_tmpP[j]) + f_weight * 
+                    t_tmpP[j] = t_tmpP[j] + rand_weight * (t_bestitP[j] - t_tmpP[j]) + rand_weight * 
                         (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
                     j = (j + 1) % i_D;
-                } while ((::unif_rand() < f_cross) && (++k < i_D));
+                } while ((::unif_rand() < rand_cross) && (++k < i_D));
                 break;
             }
             case 3: {                           // ---DE/best/1/bin with jitter---------------------------------------
                 int j = static_cast<int>(::unif_rand() * i_D);  // random parameter 
                 do {                            // add fluctuation to random target 
-                    double f_jitter = 0.0001 * ::unif_rand() + f_weight; 
+                    double f_jitter = 0.0001 * ::unif_rand() + rand_weight; 
                     t_tmpP[j] = t_bestitP[j] + f_jitter * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
                     j = (j + 1) % i_D;
-                } while ((::unif_rand() < f_cross) && (++k < i_D));
+                } while ((::unif_rand() < rand_cross) && (++k < i_D));
                 break;
             }
             case 4: {                           // ---DE/rand/1/bin with per-vector-dither----------------------------
                 int j = static_cast<int>(::unif_rand() * i_D);  // random parameter 
                 do {                            // add fluctuation to random target *
-                    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + (f_weight + ::unif_rand()*(1.0 - f_weight)) 
+                    t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + (rand_weight + ::unif_rand()*(1.0 - rand_weight)) 
                         * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
                     j = (j + 1) % i_D;
-                } while ((::unif_rand() < f_cross) && (++k < i_D));
+                } while ((::unif_rand() < rand_cross) && (++k < i_D));
                 break;
             }
             case 5: {                           // ---DE/rand/1/bin with per-generation-dither------------------------
@@ -166,33 +166,33 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
                     t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_dither 
                         * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
                     j = (j + 1) % i_D;
-                } while ((::unif_rand() < f_cross) && (++k < i_D));
+                } while ((::unif_rand() < rand_cross) && (++k < i_D));
                 break;
             }
             case 6: {                           // ---DE/current-to-p-best/1 (JADE)-----------------------------------
                 int i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
                 int j = static_cast<int>(::unif_rand() * i_D);  // random parameter 
                 do {                            // add fluctuation to random target 
-                    t_tmpP[j] = ta_oldP.at(j,i) + f_weight * (ta_oldP.at(j,i_pbest) - ta_oldP.at(j,i)) + 
-                        f_weight * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
+                    t_tmpP[j] = ta_oldP.at(j,i) + rand_weight * (ta_oldP.at(j,i_pbest) - ta_oldP.at(j,i)) + 
+                        rand_weight * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
                     j = (j + 1) % i_D;
-                } while ((::unif_rand() < f_cross) && (++k < i_D));
+                } while ((::unif_rand() < rand_cross) && (++k < i_D));
                 break;
             }
             default: {                          // ---variation to DE/rand/1/bin: either-or-algorithm------------------
                 int j = static_cast<int>(::unif_rand() * i_D);  // random parameter 
                 if (::unif_rand() < 0.5) {      // differential mutation, Pmu = 0.5 
                     do {                        // add fluctuation to random target */
-                        t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + f_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
+                        t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + rand_weight * (ta_oldP.at(j,ia_urn2[2]) - ta_oldP.at(j,ia_urn2[3]));
                         j = (j + 1) % i_D;
-                    } while ((::unif_rand() < f_cross) && (++k < i_D));
+                    } while ((::unif_rand() < rand_cross) && (++k < i_D));
 
                 } else {                        // recombination with K = 0.5*(F+1) -. F-K-Rule 
                     do {                        // add fluctuation to random target */
-                        t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + 0.5 * (f_weight + 1.0) * 
+                        t_tmpP[j] = ta_oldP.at(j,ia_urn2[1]) + 0.5 * (rand_weight + 1.0) * 
                             (ta_oldP.at(j,ia_urn2[2]) + ta_oldP.at(j,ia_urn2[3]) - 2 * ta_oldP.at(j,ia_urn2[1]));
                         j = (j + 1) % i_D;
-                    } while ((::unif_rand() < f_cross) && (++k < i_D));
+                    } while ((::unif_rand() < rand_cross) && (++k < i_D));
                 }
                 break;
             }
