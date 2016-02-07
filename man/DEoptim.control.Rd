@@ -10,7 +10,7 @@
 DEoptim.control(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
    itermax = 200, CR = 0.5, F = 0.8, trace = TRUE,
    initialpop = NULL, storepopfrom = itermax + 1,
-   storepopfreq = 1, p = 0.2, reltol = sqrt(.Machine$double.eps),
+   storepopfreq = 1, p = 0.2, c = 0, reltol = sqrt(.Machine$double.eps),
    steptol = itermax)
 }
 \arguments{

@@ -49,7 +49,7 @@ DEoptim.control <- function(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
   list(VTR = VTR, strategy = strategy, NP = NP, itermax = itermax, CR
        = CR, F = F, bs = bs, trace = trace, initialpop = initialpop,
        storepopfrom = storepopfrom, storepopfreq = storepopfreq,
-       p = p, reltol = reltol, steptol = steptol)
+       p = p, c = c, reltol = reltol, steptol = steptol)
 }
 
 DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
