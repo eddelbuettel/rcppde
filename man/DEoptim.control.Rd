@@ -10,7 +10,7 @@
 DEoptim.control(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
    itermax = 200, CR = 0.5, F = 0.8, trace = TRUE,
    initialpop = NULL, storepopfrom = itermax + 1,
-   storepopfreq = 1, p = 0.2, reltol = sqrt(.Machine$double.eps),
+   storepopfreq = 1, p = 0.2, c = 0, reltol = sqrt(.Machine$double.eps),
    steptol = itermax)
 }
 \arguments{
@@ -63,6 +63,9 @@ DEoptim.control(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
     \item{p}{when \code{strategy = 6}, the top (100 * p)\% best 
       solutions are used in the mutation. \code{p} must be defined in
       (0,1].}
+    \item{c}{when \code{c > 0}, crossover probability(CR) and step-size(F) are randomized 
+      at each mutation as an implementation of the JADE algorithm . \code{c} must be defined in
+      [0,1].}
     \item{reltol}{relative convergence tolerance.  The algorithm stops if
       it is unable to reduce the value by a factor of \code{reltol * (abs(val) +
         reltol)} after \code{steptol} steps. Defaults to

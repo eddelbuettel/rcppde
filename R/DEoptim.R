@@ -1,7 +1,7 @@
 DEoptim.control <- function(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
                             itermax = 200, CR = 0.5, F = 0.8, trace = TRUE,
                             initialpop = NULL, storepopfrom = itermax + 1,
-                            storepopfreq = 1, p = 0.2,
+                            storepopfreq = 1, p = 0.2, c = 0,
                             reltol = sqrt(.Machine$double.eps), steptol = itermax) {
   if (itermax <= 0) {
     warning("'itermax' <= 0; set to default value 200\n", immediate. = TRUE)
@@ -40,11 +40,16 @@ DEoptim.control <- function(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
     warning("'p' not in (0,1]; set to default value 0.2\n", immediate. = TRUE)
     p <- 0.2
   }
+  
+  if (c < 0 || c > 1) {
+    warning("'c' not in [0,1]; set to default value 0\n", immediate. = TRUE)
+    c <- 0
+  }
 
   list(VTR = VTR, strategy = strategy, NP = NP, itermax = itermax, CR
        = CR, F = F, bs = bs, trace = trace, initialpop = initialpop,
        storepopfrom = storepopfrom, storepopfreq = storepopfreq,
-       p = p, reltol = reltol, steptol = steptol)
+       p = p, c = c, reltol = reltol, steptol = steptol)
 }
 
 DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
