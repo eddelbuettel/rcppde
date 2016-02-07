@@ -13,6 +13,8 @@
 #include "evaluate.h"           // simple function evaluation framework
 // #include <google/profiler.h>
 
+using namespace Rcpp;
+
 void permute(int ia_urn2[], int i_urn2_depth, int i_NP, int i_avoid, int ia_urntmp[]);
 
 void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
