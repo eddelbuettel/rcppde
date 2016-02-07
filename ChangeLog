@@ -1,3 +1,14 @@
+2016-02-07  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/devol.cpp: Use R:: namespace for scalar rnorm, rcauchy calls
+
+2016-02-06  Yi Kang  <yi.kang@mmf.utoronto.ca>
+
+	* src/devol.cpp: Support JADE randomization for crossover and weight
+	* R/DEoptim.R: Idem
+	* R/DEoptim.control.R: Idem
+	* man/DEoptim.control.Rd: Idem
+
 2016-02-03  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/devol.cpp (devol): Use std::abs()
@@ -10,7 +21,7 @@
 	ARMA_32BIT_WORD is defined so that Armadillo will always integers we
 	can interchange with R (whereas C++11/14 would lead to 64 bit)
 
-2016-01-25  Yi Kang  <yi.kang.action@gmail.com>
+2016-01-25  Yi Kang  <yi.kang@mmf.utoronto.ca>
 
 	* src/deoptim.cpp: Add d_reltol, d_steptol for convergence criterion,
 	remove i_check_winner, i_av_winner

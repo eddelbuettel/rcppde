@@ -110,11 +110,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
             
             //Trigger JADE algorithm when d_c <> 0 (randomize cross-over and weight coefficient)
             if(d_c>0){
-              rand_cross = Rcpp::as<double>(Rcpp::rnorm(1, f_cross, 0.1));
+              rand_cross = R::rnorm(f_cross, 0.1);
               rand_cross = rand_cross > 1.0 ? 1 : rand_cross;
               rand_cross = rand_cross < 0.0 ? 0 : rand_cross;
               do{
-                rand_weight = Rcpp::as<double>(Rcpp::rcauchy(1, f_weight, 0.1));
+                rand_weight = R::rcauchy(f_weight, 0.1);
                 rand_weight = rand_weight > 1.0 ? 1.0 : rand_weight;
               } while (rand_weight <= 0.0);
             }
