@@ -23,7 +23,7 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            arma::colvec & ta_popC, arma::colvec & ta_oldC, arma::colvec & ta_newC, double & t_bestC,
            arma::colvec & t_bestitP, arma::colvec & t_tmpP, 
            arma::mat &d_pop, Rcpp::List &d_storepop, arma::mat & d_bestmemit, arma::colvec & d_bestvalit,
-           int & i_iterations, double i_pPct, long & l_nfeval,
+           int & i_iterations, double i_pPct, double d_c, long & l_nfeval,
            double d_reltol, int i_steptol) { 
 
     //ProfilerStart("/tmp/RcppDE.prof");
@@ -78,8 +78,12 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
   
     int i_iter = 0;                             // ------Iteration loop--------------------------------------------
     int popcnt = 0;
-    // int i_xav = 1;
     int i_iter_tol = 0;
+    
+    //Trigger JADE algorithm when d_c <> 0 (randomize cross-over and weight coefficient)
+    //Using user supplied cross-over and weight coefficient as the mean of randomized coefficients
+    double mean_cross  = f_cross;
+    double mean_weight = f_weight;
   
     while ((i_iter < i_itermax) && (t_bestC > VTR) && (i_iter_tol <= i_steptol)) {    // main loop ====================================
         if (i_iter % i_storepopfreq == 0 && i_iter >= i_storepopfrom) {         // store intermediate populations
@@ -103,6 +107,18 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
             t_tmpP = ta_oldP.col(i);            // t_tmpP is the vector to mutate and eventually select
 
             permute(ia_urn2.memptr(), urn_depth, i_NP, i, ia_urntmp.memptr()); // Pick 4 random and distinct 
+            
+            //Trigger JADE algorithm when d_c <> 0 (randomize cross-over and weight coefficient)
+            if(d_c>0){
+              f_cross = Rcpp::as<double>(rnorm(1, mean_cross, 0.1));
+              f_cross = f_cross > 1.0 ? 1 : f_cross;
+              f_cross = f_cross < 0.0 ? 0 : f_cross;
+              do{
+                f_weight = Rcpp::as<double>(rcauchy(1, mean_weight, 0.1));
+                f_weight = f_weight > 1.0 ? 1.0 : f_weight;
+              } while (f_weight <= 0.0);
+            }
+            
             int k = 0;                          // loop counter used in all strategies below 
 
             // ===Choice of strategy=======================================================
