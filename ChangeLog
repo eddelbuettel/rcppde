@@ -11,6 +11,8 @@
 
 	* cleanup: Minor edits
 
+	* .travis.yml (dist): Set to trusty
+
 2016-02-07  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/devol.cpp: Use R:: namespace for scalar rnorm, rcauchy calls
