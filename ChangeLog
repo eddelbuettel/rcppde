@@ -11,7 +11,7 @@
 
 	* cleanup: Minor edits
 
-	* .travis.yml (dist): Set to trusty
+	* .travis.yml: Updated to using run.sh from r-travis
 
 2016-02-07  Dirk Eddelbuettel  <edd@debian.org>
 
