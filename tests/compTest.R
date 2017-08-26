@@ -13,10 +13,12 @@ Genrose <- function(x) { 	## One generalization of the Rosenbrock banana valley 
 }
 
 
-maxIt <- 25                        # not excessive but so that we get some run-time on simple problems
+maxIt <- 25         		# not excessive but so that we get some run-time on simple problems
 
-suppressMessages(library(DEoptim)) 	# the original, currently 2.0.7
-suppressMessages(library(RcppDE))   # the contender
+suppressMessages({
+    library(DEoptim) 		# the original, currently 2.0.7
+    library(RcppDE) 		# the contender
+})
 
 basicDE <- function(n, maxIt, fun) DEoptim::DEoptim(fn=fun, lower=rep(-25, n), upper=rep(25, n),
                                                     control=list(NP=10*n, itermax=maxIt, trace=FALSE))#, bs=TRUE))
@@ -36,7 +38,7 @@ runPair <- function(n, maxIt, fun, funname) {
 
     gc()
     set.seed(42)
-    xptr <- .Call("putFunPtrInXPtr", funname, package="RcppDE")
+    xptr <- RcppDE:::putFunPtrInXPtr(funname)
     ct <- system.time(invisible(cres <- cppDE(n, maxIt, xptr)))[3]
 
     #stopifnot(all.equal(ores, cres))
