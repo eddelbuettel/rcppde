@@ -1,3 +1,16 @@
+2017-08-26  Dirk Eddelbuettel  <edd@debian.org>
+
+	* NAMESPACE: Use .registration=TRUE
+	* src/devol.cpp (putFunPtrInXPtr): Use Rcpp::export on test function
+	* src/RcppExports.cpp: Updated
+	* R/RcppExports.R: Idem
+
+	* tests/compTest.R (runPair): Update test
+
+	* src/Makevars (PKG_LIBS): Update, added OpenMP flags, use C++11
+
+	* cleanup: Minor edits
+
 2016-02-07  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/devol.cpp: Use R:: namespace for scalar rnorm, rcauchy calls
