@@ -44,7 +44,7 @@ DEoptim.control(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
     \item{itermax}{the maximum iteration (population generation) allowed.
       Default is \code{200}.}
     \item{CR}{crossover probability from interval [0,1]. Default
-      to \code{0.9}.}
+      to \code{0.5}.}
     \item{F}{step-size from interval [0,2]. Default to \code{0.8}.}
     \item{trace}{Printing of progress occurs? Default to \code{TRUE}. If
       numeric, progress will be printed every \code{trace} iterations.}
