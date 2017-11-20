@@ -130,7 +130,7 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
   ## member
   names(lower) <- names(upper) <- nam
   #bestmemit <- matrix(outC$bestmemit, nrow = iter, ncol = ctrl$npar, byrow = TRUE)
-  bestmemit <- outC$bestmemit
+  bestmemit <- outC$bestmemit[seq_len(iter), , drop = FALSE]
 
   dimnames(bestmemit) <- list(1:iter, nam)
   bestvalit <- as.numeric(outC$bestvalit[1:iter])
