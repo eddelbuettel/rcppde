@@ -4,6 +4,9 @@
 // Copyright (C) 2010 - 2015  Dirk Eddelbuettel <edd@debian.org>
 //
 // DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
+//
+// Adjustments to allow environments for compiled functions were adopted from
+// Rmalschains 0.2-3
 
 #ifndef Rcpp_DE_evaluate_h_
 #define Rcpp_DE_evaluate_h_
@@ -13,12 +16,15 @@
 namespace Rcpp {
     namespace DE {
 
-        double genrose(SEXP xs) {       // genrose function in C++
+        double genrose(SEXP xs, SEXP env) {       // genrose function in C++
             Rcpp::NumericVector x(xs);
+            Rcpp::Environment e(env);
+            double a = e["a"];
+            double b = e["b"];
             int n = x.size();
             double sum = 1.0;
             for (int i=1; i<n; i++) {
-                sum += 100*( ::pow(x[i-1]*x[i-1] - x[i], 2)) + (x[i] - 1)*(x[i] - 1);
+                sum += b*( ::pow(x[i-1]*x[i-1] - x[i], 2)) + (x[i] - a)*(x[i] - a);
             }
             return(sum);
         }
@@ -72,23 +78,28 @@ namespace Rcpp {
                 return(f_result); 
             }
         };
-
-        typedef double (*funcPtr)(SEXP);
+        
+        typedef double (*funcPtr)(SEXP, SEXP);
+        typedef double (*funcPtrTest)(SEXP);
+        
         class EvalCompiled : public EvalBase {
         public:
-            EvalCompiled( Rcpp::XPtr<funcPtr> xptr ) {
+            EvalCompiled(Rcpp::XPtr<funcPtr> xptr, SEXP env_) {
                 funptr = *(xptr);
+                env = env_;
             };
-            EvalCompiled( SEXP xps ) {
+            EvalCompiled(SEXP xps, SEXP env_) {
                 Rcpp::XPtr<funcPtr> xptr(xps);
                 funptr = *(xptr);
+                env = env_;
             };
             double eval(SEXP par) {
                 neval++;
-                return funptr(par);
+                return funptr(par, env);
             }
         private:
             funcPtr funptr;
+            SEXP env;
         };
 
         RcppExport SEXP putFunPtrInXPtr(SEXP funname) {
@@ -96,9 +107,9 @@ namespace Rcpp {
             if (fstr == "genrose")
                 return(Rcpp::XPtr<funcPtr>(new funcPtr(&genrose)));
             else if (fstr == "wild")
-                return(Rcpp::XPtr<funcPtr>(new funcPtr(&wild)));
+                return(Rcpp::XPtr<funcPtrTest>(new funcPtrTest(&wild)));
             else
-                return(Rcpp::XPtr<funcPtr>(new funcPtr(&rastrigin)));
+                return(Rcpp::XPtr<funcPtrTest>(new funcPtrTest(&rastrigin)));
         }
 
     }

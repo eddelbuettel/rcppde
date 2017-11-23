@@ -77,7 +77,7 @@ DEoptim <- function(fn, lower, upper, control = DEoptim.control(), ...) {
   else
     nam <- paste("par", 1:length(lower), sep = "")
 
-  env <- new.env()
+  env <- list2env(list(...))
 
   ctrl <- do.call(DEoptim.control, as.list(control))
   ctrl$npar <- length(lower)

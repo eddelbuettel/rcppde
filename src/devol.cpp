@@ -27,11 +27,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
            double d_reltol, int i_steptol) { 
 
     //ProfilerStart("/tmp/RcppDE.prof");
-    Rcpp::DE::EvalBase *ev = NULL;              // pointer to abstract base class
-    if (TYPEOF(fcall) == EXTPTRSXP) {           // non-standard mode: we are being passed an external pointer
-        ev = new Rcpp::DE::EvalCompiled(fcall); // so assign a pointer using external pointer in fcall SEXP
-    } else {                                    // standard mode: env_ is an env, fcall_ is a function 
-        ev = new Rcpp::DE::EvalStandard(fcall, rho);    // so assign R function and environment
+    Rcpp::DE::EvalBase *ev = NULL;                   // pointer to abstract base class
+    if (TYPEOF(fcall) == EXTPTRSXP) {                // non-standard mode: we are being passed an external pointer
+        ev = new Rcpp::DE::EvalCompiled(fcall, rho); // so assign a pointer using external pointer in fcall SEXP
+    } else {                                         // standard mode: env_ is an env, fcall_ is a function 
+        ev = new Rcpp::DE::EvalStandard(fcall, rho); // so assign R function and environment
     }
     const int urn_depth = 5;                    // 4 + one index to avoid 
     Rcpp::NumericVector par(i_D);               // initialize parameter vector to pass to evaluate function 
@@ -285,8 +285,8 @@ SEXP putFunPtrInXPtr(SEXP funname) { 			// needed for tests/
     if (fstr == "genrose")
         return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::genrose)));
     else if (fstr == "wild")
-        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::wild)));
+        return(Rcpp::XPtr<Rcpp::DE::funcPtrTest>(new Rcpp::DE::funcPtrTest(&Rcpp::DE::wild)));
     else
-        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::rastrigin)));
+        return(Rcpp::XPtr<Rcpp::DE::funcPtrTest>(new Rcpp::DE::funcPtrTest(&Rcpp::DE::rastrigin)));
 }
 
