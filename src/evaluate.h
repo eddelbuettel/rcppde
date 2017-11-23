@@ -4,6 +4,9 @@
 // Copyright (C) 2010 - 2015  Dirk Eddelbuettel <edd@debian.org>
 //
 // DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
+//
+// Adjustments to allow environments for compiled functions were adopted from
+// Rmalschains 0.2-3
 
 #ifndef Rcpp_DE_evaluate_h_
 #define Rcpp_DE_evaluate_h_
@@ -81,14 +84,14 @@ namespace Rcpp {
         
         class EvalCompiled : public EvalBase {
         public:
-            EvalCompiled(Rcpp::XPtr<funcPtr> xptr, SEXP __env) {
+            EvalCompiled(Rcpp::XPtr<funcPtr> xptr, SEXP env_) {
                 funptr = *(xptr);
-                env = __env;
+                env = env_;
             };
-            EvalCompiled(SEXP xps, SEXP __env) {
+            EvalCompiled(SEXP xps, SEXP env_) {
                 Rcpp::XPtr<funcPtr> xptr(xps);
                 funptr = *(xptr);
-                env = __env;
+                env = env_;
             };
             double eval(SEXP par) {
                 neval++;
