@@ -3,16 +3,12 @@ library(RcppDE)
 
 set.seed(1234)
 
-nothing <- function() {}
-sourceCpp(code = '
-#include <Rcpp.h>
-          
-// [[Rcpp::export]]
-void nothing() {}
-')
-
 Rosenbrock <- function(x) {
-  nothing()
+  
+  # briefly, calls to functions generated with Rcpp Attributes
+  # could break optimizers due to incorrect sync of RNG state
+  RcppDE:::putFunPtrInXPtr("dummy")
+  
   x1 <- x[1]
   x2 <- x[2]
   100 * (x2 - x1 * x1) ^ 2 + (1 - x1) ^ 2
