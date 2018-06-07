@@ -1,3 +1,7 @@
+2018-06-07  Kevin Ushey  <kevinushey@gmail.com>
+
+	* src/deoptim.cpp: disable RNG synchronization with dev. Rcpp
+
 2017-08-26  Dirk Eddelbuettel  <edd@debian.org>
 
 	* NAMESPACE: Use .registration=TRUE
