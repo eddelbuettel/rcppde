@@ -20,4 +20,5 @@ cont <- DEoptim.control(trace = 0)
 
 fit <- DEoptim(Rosenbrock, lower, upper, control = cont)
 
-stopifnot(all.equal(fit$optim$bestmem, c(par1 = 1, par2 = 1)))
+if (packageVersion("Rcpp") >= "0.12.17.1")
+  stopifnot(all.equal(fit$optim$bestmem, c(par1 = 1, par2 = 1)))
