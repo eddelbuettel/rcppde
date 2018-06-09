@@ -28,6 +28,10 @@ Rcpp::List DEoptim_impl(const arma::colvec & minbound,                  // user-
                         const Rcpp::List & control,                     // parameters 
                         SEXP rhoS) {                                    // optional environment
     
+#if RCPP_DEV_VERSION >= RcppDevVersion(0,12,17,1)
+    Rcpp::SuspendRNGSynchronizationScope rngScope;
+#endif
+
     double VTR           = Rcpp::as<double>(control["VTR"]);            // value to reach
     int i_strategy       = Rcpp::as<int>(control["strategy"]);          // chooses DE-strategy
     int i_itermax        = Rcpp::as<int>(control["itermax"]);           // Maximum number of generations
