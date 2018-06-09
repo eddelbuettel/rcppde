@@ -9,3 +9,4 @@ inst/doc/jss.cls
 benchmark.txt
 COPYRIGHTS
 scripts
+.*\.tar\.gz$

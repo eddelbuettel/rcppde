@@ -1,4 +1,4 @@
-## RcppDE [![Build Status](https://travis-ci.org/eddelbuettel/rcppde.svg)](https://travis-ci.org/eddelbuettel/rcppde) [![License](http://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](http://www.gnu.org/licenses/gpl-2.0.html) [![CRAN](http://www.r-pkg.org/badges/version/RcppDE)](http://cran.rstudio.com/package=RcppDE) [![Downloads](http://cranlogs.r-pkg.org/badges/RcppDE?color=brightgreen)](http://www.r-pkg.org/pkg/RcppDE)
+## RcppDE [![Build Status](https://travis-ci.org/eddelbuettel/rcppde.svg)](https://travis-ci.org/eddelbuettel/rcppde) [![License](http://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-2.0.html) [![CRAN](http://www.r-pkg.org/badges/version/RcppDE)](https://cran.r-project.org/package=RcppDE) [![Downloads](http://cranlogs.r-pkg.org/badges/RcppDE?color=brightgreen)](http://www.r-pkg.org/pkg/RcppDE)
 
 Rcpp port of Differential Evolution
 

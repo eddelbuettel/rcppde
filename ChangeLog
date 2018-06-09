@@ -1,7 +1,16 @@
+2018-06-09  Dirk Eddelbuettel  <edd@debian.org>
+
+	* DESCRIPTION (Version, Date): Release 0.1.6
+
 2018-06-07  Kevin Ushey  <kevinushey@gmail.com>
 
 	* src/deoptim.cpp: disable RNG synchronization with dev. Rcpp
 	* tests/rosenbrock.R: add test
+
+2018-03-03  Dirk Eddelbuettel  <edd@debian.org>
+
+	* tests/compTest.R: Condition comparison on (optional) DEoptim
+	package actually being available
 
 2017-08-26  Dirk Eddelbuettel  <edd@debian.org>
 
