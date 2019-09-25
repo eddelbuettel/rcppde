@@ -62,7 +62,7 @@ namespace Rcpp {
 
         class EvalStandard : public EvalBase {
         public:
-            EvalStandard(SEXP fcall_, SEXP env_) : fcall(fcall_), env(env_) {} 
+            EvalStandard(SEXP fcall_, SEXP env_) : fcall(fcall_), env(env_) {}
             double eval(SEXP par) {
                 neval++;
                 return defaultfun(par);
@@ -70,18 +70,18 @@ namespace Rcpp {
         private:
             SEXP fcall, env;
             double defaultfun(SEXP par) {                       // essentialy same as the old evaluate
-                SEXP fn = ::Rf_lang3(fcall, par, R_DotsSymbol); // this could be done with Rcpp
-                SEXP sexp_fvec = ::Rf_eval(fn, env);            // but is still a lot slower right now
+                Rcpp::Shield<SEXP> fn(::Rf_lang3(fcall, par, R_DotsSymbol));
+                Rcpp::Shield<SEXP> sexp_fvec(::Rf_eval(fn, env));
                 double f_result = REAL(sexp_fvec)[0];
-                if (ISNAN(f_result)) 
+                if (ISNAN(f_result))
                     ::Rf_error("NaN value of objective function! \nPerhaps adjust the bounds.");
-                return(f_result); 
+                return(f_result);
             }
         };
-        
+
         typedef double (*funcPtr)(SEXP, SEXP);
         typedef double (*funcPtrTest)(SEXP);
-        
+
         class EvalCompiled : public EvalBase {
         public:
             EvalCompiled(Rcpp::XPtr<funcPtr> xptr, SEXP env_) {
