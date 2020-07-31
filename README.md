@@ -7,8 +7,6 @@
 [![Downloads](https://cranlogs.r-pkg.org/badges/RcppDE?color=brightgreen)](https://www.r-pkg.org/pkg/RcppDE)
 [![Last Commit](https://img.shields.io/github/last-commit/eddelbuettel/rcppde)](https://github.com/eddelbuettel/rcppde)
 
-Rcpp port of Differential Evolution
-
 ### About
 
 The package provides global optimization by differential evolution.
