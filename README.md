@@ -2,6 +2,7 @@
 ## RcppDE: Rcpp port of Differential Evolution
 
 [![Build Status](https://travis-ci.org/eddelbuettel/rcppde.svg)](https://travis-ci.org/eddelbuettel/rcppde) 
+[![CI](https://github.com/eddelbuettel/rcppde/workflows/ci/badge.svg)](https://github.com/eddelbuettel/rcppde/actions?query=workflow%3Aci)
 [![License](https://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-2.0.html) 
 [![CRAN](https://www.r-pkg.org/badges/version/RcppDE)](https://cran.r-project.org/package=RcppDE) 
 [![Downloads](https://cranlogs.r-pkg.org/badges/RcppDE?color=brightgreen)](https://www.r-pkg.org/pkg/RcppDE)
