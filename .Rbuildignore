@@ -11,3 +11,6 @@ COPYRIGHTS
 scripts
 .*\.tar\.gz$
 ^\.github
+^travis-tool\.sh$
+^run\.sh$
+^travis_wait_.*\.log$

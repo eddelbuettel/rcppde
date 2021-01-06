@@ -16,5 +16,4 @@ Description: An efficient C++ based implementation of the 'DEoptim'
 License: GPL (>= 2)
 Imports: Rcpp
 Suggests: inline, DEoptim, lattice
-Imports: Rcpp
 LinkingTo: Rcpp, RcppArmadillo
