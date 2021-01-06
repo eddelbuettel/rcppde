@@ -5,8 +5,9 @@ inst/doc/jss.bst
 inst/doc/jss.cls
 ^.*\.Rproj$
 ^\.Rproj\.user$
-.travis.yml
+\.travis\.yml$
 benchmark.txt
 COPYRIGHTS
 scripts
 .*\.tar\.gz$
+^\.github
