@@ -17,3 +17,5 @@ License: GPL (>= 2)
 Imports: Rcpp
 Suggests: inline, DEoptim, lattice
 LinkingTo: Rcpp, RcppArmadillo
+URL: https://github.com/eddelbuettel/rcppde, https://dirk.eddelbuettel.com/code/rcpp.de.html
+BugReports: https://github.com/eddelbuettel/rcppde/issues
