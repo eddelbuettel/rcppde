@@ -1,5 +1,7 @@
 2021-10-04  Dirk Eddelbuettel  <edd@debian.org>
 
+	* DESCRIPTION (Version, Date): Roll minor version
+
 	* src/evaluate.h: Standardize all example functions on two arguments
 	* src/devol.cpp (putFunPtrInXPtr): Idem
 
