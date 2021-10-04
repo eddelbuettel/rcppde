@@ -29,8 +29,9 @@ namespace Rcpp {
             return(sum);
         }
 
-        double wild(SEXP xs) {          // wild function in C++
+        double wild(SEXP xs, SEXP env) {          // wild function in C++
             Rcpp::NumericVector x(xs);
+            Rcpp::Environment e(env);
             int n = x.size();
             double sum = 0.0;
             for (int i=0; i<n; i++) {
@@ -41,8 +42,9 @@ namespace Rcpp {
             return(sum);
         }
 
-        double rastrigin(SEXP xs) {     // rastrigin function in C++
+        double rastrigin(SEXP xs, SEXP env) {     // rastrigin function in C++
             Rcpp::NumericVector x(xs);
+            Rcpp::Environment e(env);
             int n = x.size();
             double sum = 20.0;
             for (int i=0; i<n; i++) {
@@ -80,7 +82,6 @@ namespace Rcpp {
         };
 
         typedef double (*funcPtr)(SEXP, SEXP);
-        typedef double (*funcPtrTest)(SEXP);
 
         class EvalCompiled : public EvalBase {
         public:
@@ -107,9 +108,9 @@ namespace Rcpp {
             if (fstr == "genrose")
                 return(Rcpp::XPtr<funcPtr>(new funcPtr(&genrose)));
             else if (fstr == "wild")
-                return(Rcpp::XPtr<funcPtrTest>(new funcPtrTest(&wild)));
+                return(Rcpp::XPtr<funcPtr>(new funcPtr(&wild)));
             else
-                return(Rcpp::XPtr<funcPtrTest>(new funcPtrTest(&rastrigin)));
+                return(Rcpp::XPtr<funcPtr>(new funcPtr(&rastrigin)));
         }
 
     }
