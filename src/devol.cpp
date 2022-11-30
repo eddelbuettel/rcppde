@@ -170,10 +170,9 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
                 break;
             }
             case 6: {                           // ---DE/current-to-p-best/1 (JADE)-----------------------------------
-                int i_pbest; // select from [0, 1, 2, ..., (pNP-1)] 
                 int j = static_cast<int>(::unif_rand() * i_D);  // random parameter 
                 do {                            // add fluctuation to random target 
-                     i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
+                    int i_pbest = sortIndex[static_cast<int>(::unif_rand() * p_NP)]; // select from [0, 1, 2, ..., (pNP-1)] 
                     t_tmpP[j] = ta_oldP.at(j,i) + rand_weight * (ta_oldP.at(j,i_pbest) - ta_oldP.at(j,i)) + 
                         rand_weight * (ta_oldP.at(j,ia_urn2[1]) - ta_oldP.at(j,ia_urn2[2]));
                     j = (j + 1) % i_D;
