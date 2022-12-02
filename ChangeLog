@@ -1,3 +1,7 @@
+2022-12-02  Dirk Eddelbuettel  <edd@debian.org>
+
+	* DESCRIPTION (Version, Date): Roll minor version
+
 2022-11-30 Max Coulter <max.coulter@xelect.co.uk>
 
 	* src/devol.cpp: Fix to switch statement strategy 6
