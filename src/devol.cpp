@@ -82,6 +82,10 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     
     //Trigger JADE algorithm when d_c <> 0 (randomize cross-over and weight coefficient)
     //Using user supplied cross-over and weight coefficient as the mean of randomized coefficients
+
+    double goodCR = 0, goodF = 0, goodF2 = 0, meanCR = f_cross, meanF = f_weight;////------------change
+    int i_goodNP = 0;
+    
     double rand_cross  = f_cross;
     double rand_weight = f_weight;
   
@@ -110,11 +114,11 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
             
             //Trigger JADE algorithm when d_c <> 0 (randomize cross-over and weight coefficient)
             if(d_c>0){
-              rand_cross = R::rnorm(f_cross, 0.1);
+              rand_cross = R::rnorm(meanCR, 0.1);//changed from f_cross to meanCR
               rand_cross = rand_cross > 1.0 ? 1 : rand_cross;
               rand_cross = rand_cross < 0.0 ? 0 : rand_cross;
               do{
-                rand_weight = R::rcauchy(f_weight, 0.1);
+                rand_weight = R::rcauchy(meanF, 0.1);//changed from f_weight to meanF
                 rand_weight = rand_weight > 1.0 ? 1.0 : rand_weight;
               } while (rand_weight <= 0.0);
             }
@@ -217,11 +221,23 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
                     t_bestP = t_tmpP;
                     t_bestC = t_tmpC;
                 }
+                if (d_c > 0) { /* calculate new goodCR and goodF */ //------------Added in
+                    goodCR += rand_cross / ++i_goodNP;
+                    goodF += rand_weight;
+                    goodF2 += pow(rand_weight,2.0);
+                }
             } else {
                 ta_newP.col(i) = ta_oldP.col(i);
                 ta_newC[i] = ta_oldC[i];
             }
         } // End mutation loop through pop., ie the "for (i = 0; i < i_NP; i++)"
+        
+        if (d_c > 0) { /* calculate new meanCR and meanF */
+            meanCR = (1-d_c)*meanCR + d_c*goodCR;
+            meanF = (1-d_c)*meanF + d_c*goodF2/goodF;
+
+        }
+
 
         if (i_bs_flag) {        // examine old and new pop. and take the best NP members into next generation 
             
