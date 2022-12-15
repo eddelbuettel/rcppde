@@ -1,3 +1,7 @@
+2022-12-15  Dirk Eddelbuettel  <edd@debian.org>
+
+	* DESCRIPTION (Version, Date): Roll minor version
+
 2022-12-08 Max Coulter <max.coulter@xelect.co.uk>
 
 	* src/devol.cpp: Additions to crossover weights from DEoptim
