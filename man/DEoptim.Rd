@@ -35,8 +35,7 @@ DEoptim(fn, lower, upper, control = DEoptim.control(), ...)
   Visual C++ v5.0 implementation of the Differential Evolution algorithm
   distributed with the book \emph{Differential Evolution -- A Practical
   Approach to Global Optimization} by Price, K.V., Storn, R.M., Lampinen
-  J.A, Springer-Verlag, 2006, and found on-line at
-  \url{http://www1.icsi.berkeley.edu/~storn/code.html}. Since version 2.0-3 the C 
+  J.A, Springer-Verlag, 2006. Since version 2.0-3 the C 
   implementation dynamically allocates the memory required to store the population, removing limitations on the 
   number of members in the population and length of the parameter vectors that may be optimized. 
   Since becoming publicly available, the package \pkg{DEoptim} has been used by several authors to solve optimization 
@@ -189,9 +188,6 @@ DEoptim(fn, lower, upper, control = DEoptim.control(), ...)
   the reader to Storn and Price (1997) and Price et al. (2006).
 }
 \references{
-  Differential Evolution homepage:
-  URL \url{http://www.icsi.berkeley.edu/~storn/code.html}
-  
   Storn, R. and Price, K. (1997) 
   Differential Evolution -- A Simple and Efficient Heuristic for Global Optimization over Continuous Spaces,
   \emph{Journal of Global Optimization}, 11:4, 341--359.  
@@ -206,11 +202,11 @@ DEoptim(fn, lower, upper, control = DEoptim.control(), ...)
 
   Mullen, K.M., Ardia, D., Gil, D.L, Windover, D., Cline, J. (2009)
   \pkg{DEoptim}: An \R Package for Global Optimization by Differential Evolution.
-  URL \url{http://ssrn.com/abstract=1526466}
+  URL \url{https://www.ssrn.com/abstract=1526466}
 
   Ardia, D., Boudt, K., Carl, P., Mullen, K.M., Peterson, B.G. (2010)
   Differential Evolution (\pkg{DEoptim}) for Non-Convex Portfolio Optimization.
-  URL \url{http://ssrn.com/abstract=1584905}
+  URL \url{https://www.ssrn.com/abstract=1584905}
 }
 \author{
   For \pkg{RcppDE}: Dirk Eddelbuettel.

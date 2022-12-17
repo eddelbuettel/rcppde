@@ -146,11 +146,11 @@ DEoptim.control(VTR = -Inf, strategy = 2, bs = FALSE, NP = 50,
 
   Mullen, K.M., Ardia, D., Gil, D.L, Windover, D., Cline, J. (2009)
   \pkg{DEoptim}: An \R Package for Global Optimization by Differential Evolution.
-  URL \url{http://ssrn.com/abstract=1526466}
+  URL \url{https://www.ssrn.com/abstract=1526466}
 
   Ardia, D., Boudt, K., Carl, P., Mullen, K.M., Peterson, B.G. (2010)
   Differential Evolution (\pkg{DEoptim}) for Non-Convex Portfolio Optimization.
-  URL \url{http://ssrn.com/abstract=1584905}
+  URL \url{https://www.ssrn.com/abstract=1584905}
 }
 \author{
   For \pkg{RcppDE}: Dirk Eddelbuettel.
