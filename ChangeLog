@@ -1,8 +1,10 @@
 2022-12-17  Dirk Eddelbuettel  <edd@debian.org>
 
-	* man/DEoptim.Rd: Use https, remove dead link to code.html
+ 	* man/DEoptim.Rd: Use https, remove dead link to code.html
 	* man/DEoptim.control.Rd: Use https
 	* man/DEoptim-methods.Rd: Idem
+
+	* .editorconfig: Added
 
 2022-12-15  Dirk Eddelbuettel  <edd@debian.org>
 
@@ -347,4 +349,3 @@
 	* R/zzz.R: Switch to 'packageStartupMessage()' which can suppressed
 
 	* Initial version based on SVN revision 27 of DEoptim
-
