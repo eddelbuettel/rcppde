@@ -1,12 +1,8 @@
-// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
-//
+
 // Port of DEoptim (2.0.7) by Ardia et al to Rcpp/RcppArmadillo/Armadillo
-// Copyright (C) 2010 - 2015  Dirk Eddelbuettel <edd@debian.org>
+// Copyright (C) 2010 - 2022  Dirk Eddelbuettel <edd@debian.org>
 //
 // DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
-//
-// Adjustments to allow environments for compiled functions were adopted from
-// Rmalschains 0.2-3
 
 #ifndef Rcpp_DE_evaluate_h_
 #define Rcpp_DE_evaluate_h_
@@ -16,11 +12,10 @@
 namespace Rcpp {
     namespace DE {
 
-        double genrose(SEXP xs, SEXP env) {       // genrose function in C++
+        double genrose(SEXP xs) {       // genrose function in C++
             Rcpp::NumericVector x(xs);
-            Rcpp::Environment e(env);
-            double a = e["a"];
-            double b = e["b"];
+            const double a = 1.0;
+            const double b = 100.0;
             int n = x.size();
             double sum = 1.0;
             for (int i=1; i<n; i++) {
@@ -79,8 +74,7 @@ namespace Rcpp {
             }
         };
 
-        typedef double (*funcPtr)(SEXP, SEXP);
-        typedef double (*funcPtrTest)(SEXP);
+        typedef double (*funcPtr)(SEXP);
 
         class EvalCompiled : public EvalBase {
         public:
@@ -95,7 +89,7 @@ namespace Rcpp {
             };
             double eval(SEXP par) {
                 neval++;
-                return funptr(par, env);
+                return funptr(par); //, env);
             }
         private:
             funcPtr funptr;
@@ -107,9 +101,9 @@ namespace Rcpp {
             if (fstr == "genrose")
                 return(Rcpp::XPtr<funcPtr>(new funcPtr(&genrose)));
             else if (fstr == "wild")
-                return(Rcpp::XPtr<funcPtrTest>(new funcPtrTest(&wild)));
+                return(Rcpp::XPtr<funcPtr>(new funcPtr(&wild)));
             else
-                return(Rcpp::XPtr<funcPtrTest>(new funcPtrTest(&rastrigin)));
+                return(Rcpp::XPtr<funcPtr>(new funcPtr(&rastrigin)));
         }
 
     }

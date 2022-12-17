@@ -1,5 +1,9 @@
 2022-12-17  Dirk Eddelbuettel  <edd@debian.org>
 
+	* src/evaluate.h: Compiled function interface back to consistently
+	being single argument of parameter vector
+	* src/devol.cpp: Idem
+
  	* man/DEoptim.Rd: Use https, remove dead link to code.html
 	* man/DEoptim.control.Rd: Use https
 	* man/DEoptim-methods.Rd: Idem

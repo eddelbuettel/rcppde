@@ -301,8 +301,8 @@ SEXP putFunPtrInXPtr(SEXP funname) { 			// needed for tests/
     if (fstr == "genrose")
         return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::genrose)));
     else if (fstr == "wild")
-        return(Rcpp::XPtr<Rcpp::DE::funcPtrTest>(new Rcpp::DE::funcPtrTest(&Rcpp::DE::wild)));
+        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::wild)));
     else
-        return(Rcpp::XPtr<Rcpp::DE::funcPtrTest>(new Rcpp::DE::funcPtrTest(&Rcpp::DE::rastrigin)));
+        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::rastrigin)));
 }
 
