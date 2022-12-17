@@ -14,3 +14,4 @@ scripts
 ^travis-tool\.sh$
 ^run\.sh$
 ^travis_wait_.*\.log$
+^\.editorconfig$
