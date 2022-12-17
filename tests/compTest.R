@@ -62,6 +62,7 @@ runPair <- function(n, maxIt, fun, funname, ...) {
 if (haveDEoptim) {
 
     cat("# At", format(Sys.time()), "\n")
+    options(width=120)
 
     reps <- c(5, 10, 20, 50)
 
