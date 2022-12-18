@@ -96,18 +96,20 @@ namespace Rcpp {
             SEXP env;
         };
 
-        RcppExport SEXP putFunPtrInXPtr(SEXP funname) {
-            std::string fstr = Rcpp::as<std::string>(funname);
-            if (fstr == "genrose")
-                return(Rcpp::XPtr<funcPtr>(new funcPtr(&genrose)));
-            else if (fstr == "wild")
-                return(Rcpp::XPtr<funcPtr>(new funcPtr(&wild)));
-            else
-                return(Rcpp::XPtr<funcPtr>(new funcPtr(&rastrigin)));
-        }
-
     }
 
 }
+
+// [[Rcpp::export]]
+SEXP putFunPtrInXPtr(SEXP funname) { 			// needed for tests/
+    std::string fstr = Rcpp::as<std::string>(funname);
+    if (fstr == "genrose")
+        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::genrose)));
+    else if (fstr == "wild")
+        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::wild)));
+    else
+        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::rastrigin)));
+}
+
 
 #endif

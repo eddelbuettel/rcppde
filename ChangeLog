@@ -1,3 +1,8 @@
+2022-12-18  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/evaluate.h: Move helper function from devol.cpp
+	* src/devol.cpp: Ditto
+
 2022-12-17  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/evaluate.h: Compiled function interface back to consistently

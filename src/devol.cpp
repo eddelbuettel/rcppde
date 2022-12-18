@@ -294,15 +294,3 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     // ProfilerStop();
 }
 
-
-// [[Rcpp::export]]
-SEXP putFunPtrInXPtr(SEXP funname) { 			// needed for tests/
-    std::string fstr = Rcpp::as<std::string>(funname);
-    if (fstr == "genrose")
-        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::genrose)));
-    else if (fstr == "wild")
-        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::wild)));
-    else
-        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::rastrigin)));
-}
-
