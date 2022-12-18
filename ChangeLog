@@ -1,7 +1,7 @@
 2022-12-18  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/evaluate.h: Move helper function from devol.cpp
-	* src/devol.cpp: Ditto
+	* src/devol.cpp: Ditto, remove ancient Armadillo define
 
 2022-12-17  Dirk Eddelbuettel  <edd@debian.org>
 
