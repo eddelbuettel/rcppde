@@ -5,7 +5,7 @@ DEoptim_impl <- function(minbound, maxbound, fnS, control, rhoS) {
     .Call(`_RcppDE_DEoptim_impl`, minbound, maxbound, fnS, control, rhoS)
 }
 
-putFunPtrInXPtr <- function(funname) {
-    .Call(`_RcppDE_putFunPtrInXPtr`, funname)
+putFunPtrInXPtr <- function(fstr) {
+    .Call(`_RcppDE_putFunPtrInXPtr`, fstr)
 }
 

@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // DEoptim_impl
 Rcpp::List DEoptim_impl(const arma::colvec& minbound, const arma::colvec& maxbound, SEXP fnS, const Rcpp::List& control, SEXP rhoS);
 RcppExport SEXP _RcppDE_DEoptim_impl(SEXP minboundSEXP, SEXP maxboundSEXP, SEXP fnSSEXP, SEXP controlSEXP, SEXP rhoSSEXP) {
@@ -22,13 +27,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // putFunPtrInXPtr
-SEXP putFunPtrInXPtr(SEXP funname);
-RcppExport SEXP _RcppDE_putFunPtrInXPtr(SEXP funnameSEXP) {
+SEXP putFunPtrInXPtr(const std::string& fstr);
+RcppExport SEXP _RcppDE_putFunPtrInXPtr(SEXP fstrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type funname(funnameSEXP);
-    rcpp_result_gen = Rcpp::wrap(putFunPtrInXPtr(funname));
+    Rcpp::traits::input_parameter< const std::string& >::type fstr(fstrSEXP);
+    rcpp_result_gen = Rcpp::wrap(putFunPtrInXPtr(fstr));
     return rcpp_result_gen;
 END_RCPP
 }

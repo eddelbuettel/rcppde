@@ -12,8 +12,7 @@
 namespace Rcpp {
     namespace DE {
 
-        double genrose(SEXP xs) {       // genrose function in C++
-            Rcpp::NumericVector x(xs);
+        double genrose(NumericVector x) {       // genrose function in C++
             const double a = 1.0;
             const double b = 100.0;
             int n = x.size();
@@ -24,8 +23,7 @@ namespace Rcpp {
             return(sum);
         }
 
-        double wild(SEXP xs) {          // wild function in C++
-            Rcpp::NumericVector x(xs);
+        double wild(NumericVector x) {          // wild function in C++
             int n = x.size();
             double sum = 0.0;
             for (int i=0; i<n; i++) {
@@ -36,8 +34,7 @@ namespace Rcpp {
             return(sum);
         }
 
-        double rastrigin(SEXP xs) {     // rastrigin function in C++
-            Rcpp::NumericVector x(xs);
+        double rastrigin(NumericVector x) {     // rastrigin function in C++
             int n = x.size();
             double sum = 20.0;
             for (int i=0; i<n; i++) {
@@ -49,7 +46,7 @@ namespace Rcpp {
         class EvalBase {
         public:
             EvalBase() : neval(0) {};
-            virtual double eval(SEXP par) = 0;
+            virtual double eval(NumericVector par) = 0;
             unsigned long getNbEvals() { return neval; }
         protected:
             unsigned long int neval;
@@ -58,13 +55,13 @@ namespace Rcpp {
         class EvalStandard : public EvalBase {
         public:
             EvalStandard(SEXP fcall_, SEXP env_) : fcall(fcall_), env(env_) {}
-            double eval(SEXP par) {
+            double eval(NumericVector par) {
                 neval++;
                 return defaultfun(par);
             }
         private:
             SEXP fcall, env;
-            double defaultfun(SEXP par) {                       // essentialy same as the old evaluate
+            double defaultfun(NumericVector par) {        // essentialy same as the old evaluate
                 Rcpp::Shield<SEXP> fn(::Rf_lang3(fcall, par, R_DotsSymbol));
                 Rcpp::Shield<SEXP> sexp_fvec(::Rf_eval(fn, env));
                 double f_result = REAL(sexp_fvec)[0];
@@ -74,7 +71,7 @@ namespace Rcpp {
             }
         };
 
-        typedef double (*funcPtr)(SEXP);
+        typedef double (*funcPtr)(NumericVector);
 
         class EvalCompiled : public EvalBase {
         public:
@@ -87,7 +84,7 @@ namespace Rcpp {
                 funptr = *(xptr);
                 env = env_;
             };
-            double eval(SEXP par) {
+            double eval(NumericVector par) {
                 neval++;
                 return funptr(par); //, env);
             }
@@ -101,8 +98,7 @@ namespace Rcpp {
 }
 
 // [[Rcpp::export]]
-SEXP putFunPtrInXPtr(SEXP funname) { 			// needed for tests/
-    std::string fstr = Rcpp::as<std::string>(funname);
+SEXP putFunPtrInXPtr(const std::string& fstr) { 			// needed for tests/
     if (fstr == "genrose")
         return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::genrose)));
     else if (fstr == "wild")

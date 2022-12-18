@@ -1,7 +1,11 @@
 2022-12-18  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/evaluate.h: Move helper function from devol.cpp
-	* src/devol.cpp: Ditto, remove ancient Armadillo define
+	* src/devol.cpp: Idem, remove ancient Armadillo define
+
+	* src/evaluate.h: Update function signatures to use NumericVector
+	* src/RcppExports.cpp: Idem
+	* R/RcppExport.R: Idem
 
 2022-12-17  Dirk Eddelbuettel  <edd@debian.org>
 
