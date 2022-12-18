@@ -12,37 +12,6 @@
 namespace Rcpp {
     namespace DE {
 
-        double genrose(NumericVector x) {       // genrose function in C++
-            const double a = 1.0;
-            const double b = 100.0;
-            int n = x.size();
-            double sum = 1.0;
-            for (int i=1; i<n; i++) {
-                sum += b*( ::pow(x[i-1]*x[i-1] - x[i], 2)) + (x[i] - a)*(x[i] - a);
-            }
-            return(sum);
-        }
-
-        double wild(NumericVector x) {          // wild function in C++
-            int n = x.size();
-            double sum = 0.0;
-            for (int i=0; i<n; i++) {
-                double xsq = x[i]*x[i];
-                sum += 10 * ::sin(0.3 * x[i]) * ::sin(1.3 * xsq) + 0.00001 * xsq*xsq + 0.2 * x[i] + 80;
-            }
-            sum /= n;
-            return(sum);
-        }
-
-        double rastrigin(NumericVector x) {     // rastrigin function in C++
-            int n = x.size();
-            double sum = 20.0;
-            for (int i=0; i<n; i++) {
-                sum += x[i]+2 - 10*::cos(M_2PI*x[i]);
-            }
-            return(sum);
-        }
-
         class EvalBase {
         public:
             EvalBase() : neval(0) {};
@@ -95,16 +64,6 @@ namespace Rcpp {
 
     }
 
-}
-
-// [[Rcpp::export]]
-SEXP putFunPtrInXPtr(const std::string& fstr) { 			// needed for tests/
-    if (fstr == "genrose")
-        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::genrose)));
-    else if (fstr == "wild")
-        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::wild)));
-    else
-        return(Rcpp::XPtr<Rcpp::DE::funcPtr>(new Rcpp::DE::funcPtr(&Rcpp::DE::rastrigin)));
 }
 
 

@@ -7,6 +7,8 @@
 	* src/RcppExports.cpp: Idem
 	* R/RcppExport.R: Idem
 
+	* src/exampleFunctions.cpp: Moved out of evaluate.h
+
 2022-12-17  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/evaluate.h: Compiled function interface back to consistently
