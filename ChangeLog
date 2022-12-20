@@ -1,5 +1,7 @@
 2022-12-18  Dirk Eddelbuettel  <edd@debian.org>
 
+	* DESCRIPTION (Version, Date): Release 0.1.7
+
 	* src/evaluate.h: Move helper function from devol.cpp
 	* src/devol.cpp: Idem, remove ancient Armadillo define
 
