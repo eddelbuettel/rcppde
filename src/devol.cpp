@@ -32,13 +32,13 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
     }
     const int urn_depth = 5;                    // 4 + one index to avoid
     Rcpp::NumericVector par(i_D);               // initialize parameter vector to pass to evaluate function
-    arma::icolvec::fixed<urn_depth> ia_urn2;    // fixed-size vector for urn draws
-    arma::icolvec ia_urntmp(i_NP);              // so that we don't need to re-allocated each time in permute
+    std::vector<int32_t> ia_urn2(urn_depth);    // fixed-size vector for urn draws
+    std::vector<int32_t> ia_urntmp(i_NP);       // so that we don't need to re-allocated each time in permute
     arma::mat initialpop(i_D, i_NP);
     int i_nstorepop = static_cast<int>(ceil(static_cast<double>((i_itermax - i_storepopfrom) / i_storepopfreq)));
     int p_NP = round(i_pPct * i_NP);            // choose at least two best solutions
     p_NP = p_NP < 2 ? 2 : p_NP;
-    arma::icolvec sortIndex(i_NP);              // sorted values of ta_oldC
+    std::vector<int32_t> sortIndex(i_NP);       // sorted values of ta_oldC
     if (i_strategy == 6) {
         for (int i = 0; i < i_NP; i++)
             sortIndex[i] = i;
@@ -100,14 +100,14 @@ void devol(double VTR, double f_weight, double f_cross, int i_bs_flag,
 
         if (i_strategy == 6) {                  // ---DE/current-to-p-best/1 ------------------------------------------
             arma::colvec temp_oldC = ta_oldC;                           // create copy of ta_oldC to avoid changing it
-            rsort_with_index( temp_oldC.memptr(), sortIndex.begin(), i_NP );    // sort temp_oldC to use sortIndex
+            rsort_with_index( temp_oldC.memptr(), sortIndex.data(), i_NP );    // sort temp_oldC to use sortIndex
         }
 
         for (int i = 0; i < i_NP; i++) {        // ----start of loop through ensemble------------------------
 
             t_tmpP = ta_oldP.col(i);            // t_tmpP is the vector to mutate and eventually select
 
-            permute(ia_urn2.memptr(), urn_depth, i_NP, i, ia_urntmp.memptr()); // Pick 4 random and distinct
+            permute(ia_urn2.data(), urn_depth, i_NP, i, ia_urntmp.data()); // Pick 4 random and distinct
 
             //Trigger JADE algorithm when d_c <> 0 (randomize cross-over and weight coefficient)
             if(d_c>0){
