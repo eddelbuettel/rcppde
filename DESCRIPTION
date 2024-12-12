@@ -2,9 +2,14 @@ Package: RcppDE
 Version: 0.1.7.2
 Date: 2024-10-07
 Title: Global Optimization by Differential Evolution in C++
-Author: Dirk Eddelbuettel extending DEoptim (by David Ardia, Katharine Mullen,
- Brian Peterson, Joshua Ulrich) which itself is based on DE-Engine (by Rainer Storn)
-Maintainer: Dirk Eddelbuettel <edd@debian.org>
+Authors@R: c(person("Dirk", "Eddelbuettel", role = c("aut", "cre"), email = "edd@debian.org",
+                    comment = c(ORCID = "0000-0001-6419-907X")),
+             person("David", "Ardia", role = "aut", comment = "Author of DEoptim"),
+             person("Katharine", "Mullen", role = "aut", comment = "Author of DEoptim"),
+             person("Brian", "Peterson", role = "aut", comment = "Author of DEoptim"),
+             person("Joshua", "Ulrich", role = "aut", comment = "Author of DEoptim"),
+             person("Kris", "Boudt", role = "ctb", comment = "Contributor to DEoptim"),
+             person("Rainer", "Storn", role = "aut", comment = "Principal author of DE-Engine"))
 Description: An efficient C++ based implementation of the 'DEoptim'
  function which performs global optimization by differential evolution.
  Its creation was motivated by trying to see if the old approximation "easier,
