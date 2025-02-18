@@ -1,11 +1,12 @@
 
 ## RcppDE: Rcpp port of Differential Evolution
 
-[![Build Status](https://travis-ci.org/eddelbuettel/rcppde.svg)](https://travis-ci.org/eddelbuettel/rcppde) 
 [![CI](https://github.com/eddelbuettel/rcppde/workflows/ci/badge.svg)](https://github.com/eddelbuettel/rcppde/actions?query=workflow%3Aci)
-[![License](https://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-2.0.html) 
-[![CRAN](https://www.r-pkg.org/badges/version/RcppDE)](https://cran.r-project.org/package=RcppDE) 
+[![License](https://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-2.0.html)
+[![CRAN](https://www.r-pkg.org/badges/version/RcppDE)](https://cran.r-project.org/package=RcppDE)
+[![r-universe](https://eddelbuettel.r-universe.dev/badges/RcppDE)](https://eddelbuettel.r-universe.dev/RcppDE)
 [![Downloads](https://cranlogs.r-pkg.org/badges/RcppDE?color=brightgreen)](https://www.r-pkg.org/pkg/RcppDE)
+[![Dependencies](https://tinyverse.netlify.app/badge/RcppDE)](https://cran.r-project.org/package=RcppDE)
 [![Last Commit](https://img.shields.io/github/last-commit/eddelbuettel/rcppde)](https://github.com/eddelbuettel/rcppde)
 
 ### About
@@ -21,7 +22,7 @@ initial version did in fact do so, but a good part of the gain was due to an
 implicit code review which eliminated a few inefficiencies which have since
 been eliminated in DEoptim.
 
-## Author 
+## Author
 
 Dirk Eddelbuettel extending DEoptim by David Ardia, Katharine Mullen, Brian
 Peterson and Joshua Ulrich, which itself is based on DE-Engine by Rainer
