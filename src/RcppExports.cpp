@@ -11,6 +11,16 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// armadilloVersion
+Rcpp::List armadilloVersion();
+RcppExport SEXP _RcppDE_armadilloVersion() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(armadilloVersion());
+    return rcpp_result_gen;
+END_RCPP
+}
 // DEoptim_impl
 Rcpp::List DEoptim_impl(const arma::colvec& minbound, const arma::colvec& maxbound, SEXP fnS, const Rcpp::List& control, SEXP rhoS);
 RcppExport SEXP _RcppDE_DEoptim_impl(SEXP minboundSEXP, SEXP maxboundSEXP, SEXP fnSSEXP, SEXP controlSEXP, SEXP rhoSSEXP) {
@@ -39,6 +49,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_RcppDE_armadilloVersion", (DL_FUNC) &_RcppDE_armadilloVersion, 0},
     {"_RcppDE_DEoptim_impl", (DL_FUNC) &_RcppDE_DEoptim_impl, 5},
     {"_RcppDE_putFunPtrInXPtr", (DL_FUNC) &_RcppDE_putFunPtrInXPtr, 1},
     {NULL, NULL, 0}

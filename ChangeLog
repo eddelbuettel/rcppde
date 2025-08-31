@@ -2,6 +2,9 @@
 
 	* src/Makevars (PKG_CXXFLAGS): Set -DARMA_USE_CURRENT
 
+	* src/armadilloVersion.cpp (armadilloVersion): Add getter for
+	Armadillo version, unexported by default so access via ':::'
+
 2025-03-17  Dirk Eddelbuettel  <edd@debian.org>
 
 	* .github/workflows/ci.yaml: Switch to r-ci with implicit bootstrap
