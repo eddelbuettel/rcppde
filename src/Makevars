@@ -6,5 +6,5 @@ PKG_LIBS=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) $(SHLIB_OPENMP_CXXFLAGS)
 ## -- for Google Perftools profiling, add -lprofiler
 ## PKG_LIBS+= -lprofiler
 ##
-
-PKG_CXXFLAGS=$(SHLIB_OPENMP_CXXFLAGS)
+## -- also set ARMA_USE_CURRENT to enable current Armadillo
+PKG_CXXFLAGS=$(SHLIB_OPENMP_CXXFLAGS) -DARMA_USE_CURRENT
