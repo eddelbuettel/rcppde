@@ -1,3 +1,8 @@
+2025-09-02  Dirk Eddelbuettel  <edd@debian.org>
+
+	* src/armadilloVersion.cpp: Use RcppArmadillo/Lighter instead of
+	Lightest to also satisfy builds on macOS arm64
+
 2025-08-31  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/Makevars (PKG_CXXFLAGS): Set -DARMA_USE_CURRENT

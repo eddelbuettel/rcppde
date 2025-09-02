@@ -1,5 +1,5 @@
 
-#include <RcppArmadillo/Lightest>
+#include <RcppArmadillo/Lighter>
 
 // [[Rcpp::export]]
 Rcpp::List armadilloVersion() {
