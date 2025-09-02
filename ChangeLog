@@ -1,5 +1,7 @@
 2025-09-02  Dirk Eddelbuettel  <edd@debian.org>
 
+	* DESCRIPTION (Version, Date): Roll micro version and date
+
 	* src/armadilloVersion.cpp: Use RcppArmadillo/Lighter instead of
 	Lightest to also satisfy builds on macOS arm64
 
