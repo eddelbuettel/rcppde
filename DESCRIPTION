@@ -1,6 +1,6 @@
 Package: RcppDE
 Version: 0.1.8.2
-Date: 2026-03-01
+Date: 2026-03-02
 Title: Global Optimization by Differential Evolution in C++
 Authors@R: c(person("Dirk", "Eddelbuettel", role = c("aut", "cre"), email = "edd@debian.org",
                     comment = c(ORCID = "0000-0001-6419-907X")),
