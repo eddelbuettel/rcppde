@@ -1220,7 +1220,7 @@ RcppExport SEXP DEoptim(SEXP lowerS, SEXP upperS, SEXP fnS, SEXP controlS, SEXP 
     } catch( std::exception& ex) {
 	forward_exception_to_r(ex);
     } catch(...) {
-	::Rf_error( "c++ exception (unknown reason)");
+	(Rf_error)("c++ exception (unknown reason)");
     }
     return R_NilValue;
 }
@@ -2249,7 +2249,7 @@ namespace Rcpp {
 		SEXP sexp_fvec = ::Rf_eval(fn, env);	// but is still a lot slower right now
 		double f_result = REAL(sexp_fvec)[0];
 		if (ISNAN(f_result))
-		    ::Rf_error("NaN value of objective function! \nPerhaps adjust the bounds.");
+		    Rcpp::stop("NaN value of objective function! \nPerhaps adjust the bounds.");
 		return(f_result);
 	    }
 	};

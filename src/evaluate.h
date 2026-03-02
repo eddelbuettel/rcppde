@@ -1,6 +1,6 @@
 
 // Port of DEoptim (2.0.7) by Ardia et al to Rcpp/RcppArmadillo/Armadillo
-// Copyright (C) 2010 - 2022  Dirk Eddelbuettel <edd@debian.org>
+// Copyright (C) 2010 - 2026  Dirk Eddelbuettel <edd@debian.org>
 //
 // DEoptim is Copyright (C) 2009 David Ardia and Katharine Mullen
 
@@ -35,7 +35,7 @@ namespace Rcpp {
                 Rcpp::Shield<SEXP> sexp_fvec(::Rf_eval(fn, env));
                 double f_result = REAL(sexp_fvec)[0];
                 if (ISNAN(f_result))
-                    ::Rf_error("NaN value of objective function! \nPerhaps adjust the bounds.");
+                    Rcpp::stop("NaN value of objective function! \nPerhaps adjust the bounds.");
                 return(f_result);
             }
         };
