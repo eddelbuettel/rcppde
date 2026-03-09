@@ -1,3 +1,10 @@
+2026-03-09  Dirk Eddelbuettel  <edd@debian.org>
+
+	* man/DEoptim.Rd: Replace two SSRN preprint references with
+	corresponding JSS and RJournal articles
+	* man/DEoptim.control.Rd: Idem
+	* man/DEoptim.methods.Rd: Idem
+
 2026-03-02  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/evaluate.h (defaultfun): Replace Rf_error with Rcpp::stop

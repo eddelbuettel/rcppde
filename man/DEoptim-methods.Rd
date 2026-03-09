@@ -24,11 +24,11 @@
   each generation. \code{plot.type = "bestvalit"} plots the best value of
   the objective function each generation. Finally, \code{plot.type = "storepop"} results in a plot of
   stored populations (which are only available if these have been saved by
-  setting the \code{control} argument of \code{DEoptim} appropriately). Storing intermediate populations 
-  allows us to examine the progress of the optimization in detail.   
+  setting the \code{control} argument of \code{DEoptim} appropriately). Storing intermediate populations
+  allows us to examine the progress of the optimization in detail.
   A summary method also exists and returns the best parameter vector, the best value of the objective function,
-  the number of generations optimization ran, and the number of times the 
-  objective function was evaluated. 
+  the number of generations optimization ran, and the number of times the
+  objective function was evaluated.
 }
 \note{
   Further details and examples of the \R package \pkg{DEoptim} can be found
@@ -38,27 +38,27 @@
 }
 \author{
   For \pkg{RcppDE}: Dirk Eddelbuettel.
-  
-  For \pkg{DEoptim}: 
-  David Ardia, Katharine Mullen \email{katharine.mullen@nist.gov}, 
+
+  For \pkg{DEoptim}:
+  David Ardia, Katharine Mullen \email{katharine.mullen@nist.gov},
   Brian Peterson and Joshua Ulrich.
 }
 \seealso{
   \code{\link{DEoptim}} and \code{\link{DEoptim.control}}.
 }
 \references{
-  Mullen, K.M., Ardia, D., Gil, D.L, Windover, D., Cline, J. (2009)
+  Mullen, K.M., Ardia, D., Gil, D.L, Windover, D., Cline, J. (2011)
   \pkg{DEoptim}: An \R Package for Global Optimization by Differential Evolution.
-  URL \url{https://www.ssrn.com/abstract=1526466}
+  URL \url{https://doi.org/10.18637/jss.v040.i06}
 
-  Ardia, D., Boudt, K., Carl, P., Mullen, K.M., Peterson, B.G. (2010)
+  Ardia, D., Boudt, K., Carl, P., Mullen, K.M., Peterson, B.G. (2011)
   Differential Evolution (\pkg{DEoptim}) for Non-Convex Portfolio Optimization.
-  URL \url{https://www.ssrn.com/abstract=1584905}
+  URL \url{https://doi.org/10.32614/RJ-2011-005}
 }
 \examples{
   ## Rosenbrock Banana function
-  ## The function has a global minimum f(x) = 0 at the point (0,0).  
-  ## Note that the vector of parameters to be optimized must be the first 
+  ## The function has a global minimum f(x) = 0 at the point (0,0).
+  ## Note that the vector of parameters to be optimized must be the first
   ## argument of the objective function passed to DEoptim.
   Rosenbrock <- function(x){
     x1 <- x[1]
@@ -68,10 +68,10 @@
 
   lower <- c(-10, -10)
   upper <- -lower
-  
+
   set.seed(1234)
   outDEoptim <- DEoptim(Rosenbrock, lower, upper)
-  
+
   ## print output information
   summary(outDEoptim)
 
@@ -87,7 +87,7 @@
                         DEoptim.control(itermax = 500,
                         storepopfrom = 1, storepopfreq = 2))
   summary(outDEoptim)
-  
+
   ## plot intermediate populations
   dev.new()
   plot(outDEoptim, plot.type = "storepop")
@@ -100,7 +100,7 @@
   outDEoptim = DEoptim(Wild, lower = -50, upper = 50,
                        DEoptim.control(trace = FALSE, storepopfrom = 50,
                        storepopfreq = 1))
-  
+
   plot(outDEoptim, type = 'b')
 
   dev.new()
@@ -124,7 +124,7 @@
   x1 <- x2 <- seq(from = -10.0, to = 10.0, by = 0.1)
   thexlim <- theylim <- range(x1)
   z <- outer(x1, x2, FUN = plotNegPdfMix)
-  
+
   contour(x1, x2, z, nlevel = 20, las = 1, col = rainbow(20),
      xlim = thexlim, ylim = theylim)
 
@@ -136,7 +136,7 @@
   ## convergence plot
   dev.new()
   plot(outDEoptim)
-  
+
   ## the intermediate populations indicate the bi-modality of the function
   dev.new()
   plot(outDEoptim, plot.type = "storepop")
