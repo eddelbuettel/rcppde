@@ -5,7 +5,7 @@
 %\usepackage{flafter}
 \usepackage{booktabs}
 
-\author{Dirk Eddelbuettel\\Debian Project} % \And Second Author\\Plus Affiliation}
+\author{Dirk Eddelbuettel}%\\Debian Project} % \And Second Author\\Plus Affiliation}
 \title{From \pkg{DEoptim} to \pkg{RcppDE}: \\
   A case study in porting from \proglang{C} to \proglang{C++} \\
   using \pkg{Rcpp} and \pkg{RcppArmadillo}}
@@ -54,12 +54,12 @@
 
 \Address{
   Dirk Eddelbuettel \\
-  Debian Project \\
-  River Forest, IL, USA\\
+  %% Debian Project \\
+  %% River Forest, IL, USA\\
   %% Telephone: +43/1/31336-5053
   %% Fax: +43/1/31336-734
   E-mail: \email{edd@debian.org}\\
-  URL: \url{http://dirk.eddelbuettel.com}
+  URL: \url{https://dirk.eddelbuettel.com}
 }
 
 %% need no \usepackage{Sweave.sty}

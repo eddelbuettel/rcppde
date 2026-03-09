@@ -5,6 +5,10 @@
 	* man/DEoptim.control.Rd: Idem
 	* man/DEoptim.methods.Rd: Idem
 
+	* vignettes/RcppDE.Rnw: Updated references and URLs
+	* vignettes/RcppDE.Rnw: Update URL
+	* README.md: Idem
+
 2026-03-02  Dirk Eddelbuettel  <edd@debian.org>
 
 	* src/evaluate.h (defaultfun): Replace Rf_error with Rcpp::stop
