@@ -49,11 +49,11 @@
 \references{
   Mullen, K.M., Ardia, D., Gil, D.L, Windover, D., Cline, J. (2011)
   \pkg{DEoptim}: An \R Package for Global Optimization by Differential Evolution.
-  URL \url{https://doi.org/10.18637/jss.v040.i06}
+  \doi{10.18637/jss.v040.i06}
 
   Ardia, D., Boudt, K., Carl, P., Mullen, K.M., Peterson, B.G. (2011)
   Differential Evolution (\pkg{DEoptim}) for Non-Convex Portfolio Optimization.
-  URL \url{https://doi.org/10.32614/RJ-2011-005}
+  \doi{10.32614/RJ-2011-005}
 }
 \examples{
   ## Rosenbrock Banana function
